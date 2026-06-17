@@ -76,11 +76,15 @@ notify_icon() {
 }
 
 notify_sender() {
+    # `-sender <bundleid>` makes the alert appear *as* that app (and shows its
+    # icon), but terminal-notifier HANGS on `-sender` on recent macOS — the
+    # process never returns, so the notification never posts and zombie
+    # processes pile up. We therefore do NOT auto-use it; it's opt-in only via
+    # CLAUDE_PULSE_NOTIFY_SENDER for users on setups where it works. By default
+    # we use `-appIcon` (below), which returns cleanly and still shows the
+    # Claude icon.
     if [ -n "${CLAUDE_PULSE_NOTIFY_SENDER:-}" ]; then
         printf '%s' "$CLAUDE_PULSE_NOTIFY_SENDER"; return 0
-    fi
-    if [ -d "/Applications/Claude.app" ]; then
-        printf '%s' "com.anthropic.claudefordesktop"; return 0
     fi
     return 1
 }
@@ -89,18 +93,23 @@ notify_terminal_notifier() {
     command -v terminal-notifier >/dev/null 2>&1 || return 1
     icon=$(notify_icon || printf '')
     sender=$(notify_sender || printf '')
+    # Run synchronously (no `&`): a hook is a short-lived process, and Claude
+    # Code reaps it as soon as it returns. A backgrounded notifier gets killed
+    # before macOS posts it — which is why "Claude finished" never showed.
+    # terminal-notifier returns immediately after posting (we don't pass -wait),
+    # so this is fast and stays within the hook timeout.
     if [ -n "$sender" ]; then
         terminal-notifier -title "Claude Code" -message "$message" \
-            -group "claude-pulse" -sender "$sender" >/dev/null 2>&1 &
+            -group "claude-pulse" -sender "$sender" >/dev/null 2>&1
         return 0
     fi
     if [ -n "$icon" ]; then
         terminal-notifier -title "Claude Code" -message "$message" \
-            -group "claude-pulse" -appIcon "$icon" >/dev/null 2>&1 &
+            -group "claude-pulse" -appIcon "$icon" >/dev/null 2>&1
         return 0
     fi
     terminal-notifier -title "Claude Code" -message "$message" \
-        -group "claude-pulse" >/dev/null 2>&1 &
+        -group "claude-pulse" >/dev/null 2>&1
     return 0
 }
 
@@ -115,16 +124,16 @@ notify_send() {
     command -v notify-send >/dev/null 2>&1 || return 1
     icon=$(notify_icon || printf '')
     if [ -n "$icon" ]; then
-        notify-send -a "Claude Code" -i "$icon" "Claude Code" "$message" >/dev/null 2>&1 &
+        notify-send -a "Claude Code" -i "$icon" "Claude Code" "$message" >/dev/null 2>&1
     else
-        notify-send -a "Claude Code" "Claude Code" "$message" >/dev/null 2>&1 &
+        notify-send -a "Claude Code" "Claude Code" "$message" >/dev/null 2>&1
     fi
     return 0
 }
 
 notify_osa() {
     command -v osascript >/dev/null 2>&1 || return 1
-    osascript -e "display notification \"$message\" with title \"Claude Code\"" >/dev/null 2>&1 &
+    osascript -e "display notification \"$message\" with title \"Claude Code\"" >/dev/null 2>&1
     return 0
 }
 
