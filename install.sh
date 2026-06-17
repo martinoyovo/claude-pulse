@@ -65,14 +65,8 @@ install_file "$STATUSLINE_SRC" "statusline.sh" "$STATUSLINE_DST"
 install_file "$NOTIFY_SRC" "hooks/notify.sh" "$NOTIFY_DST"
 chmod +x "$STATUSLINE_DST" "$NOTIFY_DST" || exit 1
 
-# Generate the notification logo (PNG) from the local Claude.app icon, so
-# desktop alerts carry the Claude mark. macOS only; a .icns can suppress the
-# banner, so we convert to PNG with sips. Degrades to no-icon if unavailable.
+# Source icon for the macOS notifier app (below).
 CLAUDE_ICNS="/Applications/Claude.app/Contents/Resources/electron.icns"
-LOGO_DST="$INSTALL_DIR/claude-logo.png"
-if command -v sips >/dev/null 2>&1 && [ -f "$CLAUDE_ICNS" ]; then
-    sips -s format png "$CLAUDE_ICNS" --out "$LOGO_DST" >/dev/null 2>&1 || rm -f "$LOGO_DST"
-fi
 
 # macOS: build a Claude-branded notifier app so desktop alerts show the Claude
 # logo. A notification shows the icon of the app that POSTS it; terminal-
@@ -101,22 +95,27 @@ build_macos_notifier() {
     rm -rf "$NOTIFIER_APP"
     cp -R "$app_src" "$NOTIFIER_APP" 2>/dev/null || return 0
 
+    # Fail closed: if we can't actually rebrand the bundle (icon, id, name) or
+    # re-sign it, remove it so notify.sh falls back to the plain notifier rather
+    # than posting through a copy that still identifies as terminal-notifier.
     plist="$NOTIFIER_APP/Contents/Info.plist"
     icon_file=$(defaults read "$plist" CFBundleIconFile 2>/dev/null || echo "Terminal")
     case "$icon_file" in *.icns) : ;; *) icon_file="$icon_file.icns" ;; esac
-    cp "$CLAUDE_ICNS" "$NOTIFIER_APP/Contents/Resources/$icon_file" 2>/dev/null || true
-    defaults write "$plist" CFBundleIdentifier "com.claudepulse.notifier" 2>/dev/null || true
-    defaults write "$plist" CFBundleName "Claude Code" 2>/dev/null || true
-    defaults write "$plist" CFBundleDisplayName "Claude Code" 2>/dev/null || true
+    cp "$CLAUDE_ICNS" "$NOTIFIER_APP/Contents/Resources/$icon_file" 2>/dev/null \
+        || { rm -rf "$NOTIFIER_APP"; return 0; }
+    defaults write "$plist" CFBundleIdentifier "com.claudepulse.notifier" 2>/dev/null \
+        || { rm -rf "$NOTIFIER_APP"; return 0; }
+    defaults write "$plist" CFBundleName "Claude Code" 2>/dev/null \
+        || { rm -rf "$NOTIFIER_APP"; return 0; }
+    defaults write "$plist" CFBundleDisplayName "Claude Code" 2>/dev/null \
+        || { rm -rf "$NOTIFIER_APP"; return 0; }
     plutil -convert xml1 "$plist" 2>/dev/null || true
 
-    # Re-sign (modifying the bundle broke the original signature) or bail.
     if ! codesign --force --deep --sign - "$NOTIFIER_APP" >/dev/null 2>&1; then
         rm -rf "$NOTIFIER_APP"; return 0
     fi
     lsr="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
     [ -x "$lsr" ] && "$lsr" -f "$NOTIFIER_APP" >/dev/null 2>&1
-    killall iconservicesagent >/dev/null 2>&1 || true
 }
 build_macos_notifier
 

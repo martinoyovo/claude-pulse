@@ -97,7 +97,7 @@ the **message** is the status.
 | --- | --- | --- |
 | `CLAUDE_PULSE_NOTIFY` | `auto` | Backend: `auto`, `terminal-notifier`, `alerter`, `notify-send`, `osa`, `osc9`, `bell`, `off`. |
 | `CLAUDE_PULSE_NOTIFY_TITLE` | folder name | Override the notification title. |
-| `CLAUDE_PULSE_NOTIFY_ICON` | auto | PNG path used as the icon. |
+| `CLAUDE_PULSE_NOTIFY_ICON` | _(none)_ | PNG path used as the icon (for `notify-send` / the plain `terminal-notifier` fallback). |
 | `CLAUDE_PULSE_NOTIFY_SENDER` | _(off)_ | macOS bundle id for `terminal-notifier` (opt-in; see icon note below). |
 
 `auto` tries, in order: `terminal-notifier` → `alerter` → `notify-send`
@@ -109,10 +109,10 @@ that posts it. On macOS the installer builds a small Claude-branded notifier —
 from your local Claude.app — and posts through it, so alerts show the Claude
 logo. This needs `terminal-notifier` and `codesign` (Xcode Command Line Tools);
 macOS may ask you to allow notifications the first time. If it can't be built,
-it falls back to the plain notifier (system icon). On Linux the logo shows via
-`notify-send -i`. (`terminal-notifier`'s `-sender` flag — the other way to set
-the icon — hangs for Claude's bundle id, so it's opt-in only via
-`CLAUDE_PULSE_NOTIFY_SENDER`.)
+it falls back to the plain notifier (system icon). On Linux, set
+`CLAUDE_PULSE_NOTIFY_ICON` to a PNG to show one via `notify-send -i`.
+(`terminal-notifier`'s `-sender` flag — the other way to set the icon — hangs
+for Claude's bundle id, so it's opt-in only via `CLAUDE_PULSE_NOTIFY_SENDER`.)
 
 On macOS the built-in `osascript` fallback shows notifications as *Script
 Editor*. For a cleaner source, install `terminal-notifier`:

@@ -95,14 +95,11 @@ esac
 
 # ─── Notifier backends ───────────────────────────────────────────────────────
 notify_icon() {
-    # Use a PNG (NOT .icns — an .icns can suppress the banner on recent macOS).
+    # Manual override only (a PNG — NOT .icns, which can suppress the banner on
+    # recent macOS). The macOS logo comes from the bundled ClaudePulse.app, not
+    # from here; this is mainly useful for notify-send on Linux.
     if [ -n "${CLAUDE_PULSE_NOTIFY_ICON:-}" ] && [ -f "$CLAUDE_PULSE_NOTIFY_ICON" ]; then
         printf '%s' "$CLAUDE_PULSE_NOTIFY_ICON"; return 0
-    fi
-    # A logo PNG generated at install time from the local Claude.app icon and
-    # placed next to this script.
-    if [ -n "${SCRIPT_DIR:-}" ] && [ -f "$SCRIPT_DIR/claude-logo.png" ]; then
-        printf '%s' "$SCRIPT_DIR/claude-logo.png"; return 0
     fi
     return 1
 }
@@ -132,7 +129,6 @@ notify_terminal_notifier() {
     else
         return 1
     fi
-    icon=$(notify_icon || printf '')
     sender=$(notify_sender || printf '')
     # Build the args. Default is the bare, proven-reliable form: just a title
     # and message. Everything else is opt-in because each one can stop the
@@ -146,10 +142,11 @@ notify_terminal_notifier() {
     # posting (no -wait), so this is fast and within the hook timeout.
     set -- -title "$title" -message "$message"
     [ -n "${CLAUDE_PULSE_NOTIFY_GROUP:-}" ] && set -- "$@" -group "$CLAUDE_PULSE_NOTIFY_GROUP"
-    # The bundled app already carries the Claude icon, so -appIcon is only for
-    # the plain system notifier (and only helps where the backend honors it).
-    if [ "$tn" = "terminal-notifier" ] && [ -n "$icon" ]; then
-        set -- "$@" -appIcon "$icon"
+    # The bundled app already carries the Claude icon. Only the plain system
+    # notifier needs an explicit -appIcon (and only where the backend honors it).
+    if [ "$tn" = "terminal-notifier" ]; then
+        icon=$(notify_icon || printf '')
+        [ -n "$icon" ] && set -- "$@" -appIcon "$icon"
     fi
     [ -n "$sender" ] && set -- "$@" -sender "$sender"
     "$tn" "$@" >/dev/null 2>&1
