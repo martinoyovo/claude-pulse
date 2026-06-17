@@ -66,11 +66,11 @@ esac
 
 # ─── Notifier backends ───────────────────────────────────────────────────────
 notify_icon() {
+    # Opt-in only. -appIcon with an .icns file can suppress the banner entirely
+    # on recent macOS, so we do NOT auto-attach the Claude .icns. Set
+    # CLAUDE_PULSE_NOTIFY_ICON to a PNG to add an icon.
     if [ -n "${CLAUDE_PULSE_NOTIFY_ICON:-}" ] && [ -f "$CLAUDE_PULSE_NOTIFY_ICON" ]; then
         printf '%s' "$CLAUDE_PULSE_NOTIFY_ICON"; return 0
-    fi
-    if [ -f "/Applications/Claude.app/Contents/Resources/electron.icns" ]; then
-        printf '%s' "/Applications/Claude.app/Contents/Resources/electron.icns"; return 0
     fi
     return 1
 }
@@ -93,23 +93,21 @@ notify_terminal_notifier() {
     command -v terminal-notifier >/dev/null 2>&1 || return 1
     icon=$(notify_icon || printf '')
     sender=$(notify_sender || printf '')
-    # Run synchronously (no `&`): a hook is a short-lived process, and Claude
-    # Code reaps it as soon as it returns. A backgrounded notifier gets killed
-    # before macOS posts it — which is why "Claude finished" never showed.
-    # terminal-notifier returns immediately after posting (we don't pass -wait),
-    # so this is fast and stays within the hook timeout.
-    if [ -n "$sender" ]; then
-        terminal-notifier -title "Claude Code" -message "$message" \
-            -group "claude-pulse" -sender "$sender" >/dev/null 2>&1
-        return 0
-    fi
-    if [ -n "$icon" ]; then
-        terminal-notifier -title "Claude Code" -message "$message" \
-            -group "claude-pulse" -appIcon "$icon" >/dev/null 2>&1
-        return 0
-    fi
-    terminal-notifier -title "Claude Code" -message "$message" \
-        -group "claude-pulse" >/dev/null 2>&1
+    # Build the args. Default is the bare, proven-reliable form: just a title
+    # and message. Everything else is opt-in because each one can stop the
+    # banner from showing on recent macOS:
+    #   -group   coalesces repeats — a new one silently REPLACES the previous,
+    #            so no banner pops (this is why "Claude finished" never showed).
+    #   -appIcon with an .icns can suppress the banner.
+    #   -sender  HANGS indefinitely.
+    # Run synchronously (no `&`): a backgrounded notifier gets reaped when the
+    # hook exits, before macOS posts it. terminal-notifier returns right after
+    # posting (no -wait), so this is fast and within the hook timeout.
+    set -- -title "Claude Code" -message "$message"
+    [ -n "${CLAUDE_PULSE_NOTIFY_GROUP:-}" ] && set -- "$@" -group "$CLAUDE_PULSE_NOTIFY_GROUP"
+    [ -n "$icon" ]   && set -- "$@" -appIcon "$icon"
+    [ -n "$sender" ] && set -- "$@" -sender "$sender"
+    terminal-notifier "$@" >/dev/null 2>&1
     return 0
 }
 
