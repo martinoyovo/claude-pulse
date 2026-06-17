@@ -120,9 +120,22 @@ echo '{"hook_event_name":"Notification","message":"Permission needed"}' \
   | ~/.claude/claude-pulse/notify.sh                                        # "Permission needed"
 ```
 
-Real Claude Code test: ask Claude to `sleep 8` then stop, and switch to another
-window — you should get **Claude finished**. Ask it to do something that needs
-approval and switch away — you should get a permission notification.
+Real Claude Code test — paste these prompts into a session:
+
+```text
+Run `sleep 8; echo claude-pulse notification test complete` and then stop.
+```
+
+Switch away while it sleeps. You should get **Claude finished**.
+
+```text
+Run `open -a Calculator` so I can test the approval notification.
+```
+
+Switch away when Claude asks to approve the command. You should get **Claude
+needs you** (or the permission text itself). This only fires if the command
+isn't already auto-approved — if `open` is allowlisted in your settings, use one
+that isn't, e.g. ``Run `osascript -e 'beep'` ``.
 
 ## Uninstall / revert
 
