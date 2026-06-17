@@ -17,6 +17,7 @@ STATUSLINE_SRC="$SCRIPT_DIR/statusline.sh"
 STATUSLINE_DST="$INSTALL_DIR/statusline.sh"
 NOTIFY_SRC="$SCRIPT_DIR/hooks/notify.sh"
 NOTIFY_DST="$INSTALL_DIR/notify.sh"
+PREV_STATUSLINE_FILE="$INSTALL_DIR/statusline.prev.json"
 
 RAW_URL=${PULSE_RAW_URL:-"https://raw.githubusercontent.com/martinoyovo/claude-pulse/main"}
 
@@ -60,6 +61,7 @@ merge_settings() {
         SETTINGS_FILE=$SETTINGS_FILE \
         STATUSLINE_DST=$STATUSLINE_DST \
         NOTIFY_DST=$NOTIFY_DST \
+        PREV_STATUSLINE_FILE=$PREV_STATUSLINE_FILE \
         python3 - <<'PY'
 from pathlib import Path
 import json, os
@@ -67,6 +69,7 @@ import json, os
 path = Path(os.environ["SETTINGS_FILE"])
 statusline = os.environ["STATUSLINE_DST"]
 notify = os.environ["NOTIFY_DST"]
+prev_file = Path(os.environ["PREV_STATUSLINE_FILE"])
 
 try:
     data = json.loads(path.read_text()) if path.exists() else {}
@@ -79,6 +82,13 @@ if not isinstance(data, dict):
     data = {}
 
 # ── statusLine ───────────────────────────────────────────────────────────────
+# Back up any pre-existing status line that isn't ours, so uninstall (or the
+# `--statusline` revert) can restore it. We only capture a non-pulse status
+# line, so re-running install never overwrites the saved original.
+existing_sl = data.get("statusLine")
+if isinstance(existing_sl, dict) and existing_sl.get("command") != statusline:
+    prev_file.write_text(json.dumps(existing_sl, indent=2) + "\n")
+
 data["statusLine"] = {
     "type": "command",
     "command": statusline,
@@ -160,6 +170,10 @@ printf '  %s\n\n' "$NOTIFY_DST"
 printf 'Wired into:\n'
 printf '  %s  (statusLine + hooks.Stop + hooks.Notification)\n\n' "$SETTINGS_FILE"
 printf 'Claude Code version: %s\n\n' "$claude_version"
+if [ -f "$PREV_STATUSLINE_FILE" ]; then
+    printf 'Your previous status line was saved. Restore it any time with:\n'
+    printf '  %s/uninstall.sh --statusline\n\n' "$SCRIPT_DIR"
+fi
 printf 'Restart Claude Code (or start a new session) to see the status line.\n'
 printf 'Test the notification hook with:\n'
 printf '  echo '\''{"hook_event_name":"Stop"}'\'' | %s\n' "$NOTIFY_DST"

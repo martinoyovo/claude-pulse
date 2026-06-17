@@ -124,16 +124,26 @@ Real Claude Code test: ask Claude to `sleep 8` then stop, and switch to another
 window — you should get **Claude finished**. Ask it to do something that needs
 approval and switch away — you should get a permission notification.
 
-## Uninstall
+## Uninstall / revert
+
+claude-pulse takes over the single `statusLine` slot while installed, but the
+takeover is fully reversible — `install.sh` saves your previous status line
+first.
 
 ```sh
-./uninstall.sh
+./uninstall.sh                # remove everything, restore your previous status line
+./uninstall.sh --statusline   # revert ONLY the status line, keep notifications
 ```
 
-Removes `~/.claude/claude-pulse/` and strips claude-pulse's `statusLine` and
-hook entries from `~/.claude/settings.json`, leaving the rest of your config
-intact. (claude-pulse takes over the single `statusLine` slot while installed;
-uninstalling clears it — re-add your previous status line if you had one.)
+- **Full uninstall** removes `~/.claude/claude-pulse/` and strips claude-pulse's
+  `statusLine` and hook entries from `~/.claude/settings.json`, restoring your
+  previous status line if one was saved (otherwise the slot is cleared). The
+  rest of your config is left intact.
+- **`--statusline`** backs the status-line change out at any time — it restores
+  your previous status line (or clears ours) while leaving the notification
+  hook and installed files in place. Re-run `install.sh` to take it over again.
+
+Run `./uninstall.sh --help` for details.
 
 ## Notes
 
