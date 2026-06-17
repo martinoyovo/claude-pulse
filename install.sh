@@ -56,6 +56,15 @@ install_file "$STATUSLINE_SRC" "statusline.sh" "$STATUSLINE_DST"
 install_file "$NOTIFY_SRC" "hooks/notify.sh" "$NOTIFY_DST"
 chmod +x "$STATUSLINE_DST" "$NOTIFY_DST" || exit 1
 
+# Generate the notification logo (PNG) from the local Claude.app icon, so
+# desktop alerts carry the Claude mark. macOS only; a .icns can suppress the
+# banner, so we convert to PNG with sips. Degrades to no-icon if unavailable.
+CLAUDE_ICNS="/Applications/Claude.app/Contents/Resources/electron.icns"
+LOGO_DST="$INSTALL_DIR/claude-logo.png"
+if command -v sips >/dev/null 2>&1 && [ -f "$CLAUDE_ICNS" ]; then
+    sips -s format png "$CLAUDE_ICNS" --out "$LOGO_DST" >/dev/null 2>&1 || rm -f "$LOGO_DST"
+fi
+
 merge_settings() {
     if command -v python3 >/dev/null 2>&1; then
         SETTINGS_FILE=$SETTINGS_FILE \

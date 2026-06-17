@@ -9,11 +9,16 @@
 # Cross-platform: macOS (terminal-notifier / osascript), Linux (notify-send),
 # with terminal-bell / OSC-9 / no-op fallbacks.
 #
+# The notification mirrors Claude.app's structure: the TITLE is the project
+# folder name (so you can tell which session is waiting when several are open),
+# and the MESSAGE is the status.
+#
 # Configuration (environment variables):
 #   CLAUDE_PULSE_NOTIFY        Backend: auto (default), terminal-notifier,
 #                              alerter, notify-send, osa, osc9, bell, off.
-#   CLAUDE_PULSE_NOTIFY_ICON   Image path for terminal-notifier / notify-send.
-#   CLAUDE_PULSE_NOTIFY_SENDER macOS bundle id for terminal-notifier.
+#   CLAUDE_PULSE_NOTIFY_TITLE  Override the title (default: project folder name).
+#   CLAUDE_PULSE_NOTIFY_ICON   PNG path for terminal-notifier / notify-send.
+#   CLAUDE_PULSE_NOTIFY_SENDER macOS bundle id for terminal-notifier (opt-in).
 
 payload=$(cat 2>/dev/null) || payload=
 [ -n "$payload" ] || exit 0
@@ -23,12 +28,22 @@ case "$(uname -s 2>/dev/null)" in
     CYGWIN*|MINGW*|MSYS*|Windows_NT*) exit 0 ;;
 esac
 
+# Where this script lives, so we can find a bundled logo next to it.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd) || SCRIPT_DIR=
+
 # ─── Parse the event name (jq → python3 → sed fallback) ──────────────────────
 event=
 detail=
+cwd=
 if command -v jq >/dev/null 2>&1; then
     event=$(printf '%s' "$payload" | jq -r '.hook_event_name // ""' 2>/dev/null) || event=
     detail=$(printf '%s' "$payload" | jq -r '.message // ""' 2>/dev/null) || detail=
+    cwd=$(printf '%s' "$payload" | jq -r '.cwd // .workspace.current_dir // ""' 2>/dev/null) || cwd=
+fi
+
+if [ -z "$cwd" ]; then
+    cwd=$(printf '%s' "$payload" |
+        sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sed -n '1p')
 fi
 
 if [ -z "$event" ] && command -v python3 >/dev/null 2>&1; then
@@ -49,16 +64,30 @@ if [ -z "$event" ]; then
         sed -n '1p')
 fi
 
+# ─── Title: the project folder name (like Claude.app) ────────────────────────
+if [ -n "${CLAUDE_PULSE_NOTIFY_TITLE:-}" ]; then
+    title="$CLAUDE_PULSE_NOTIFY_TITLE"
+elif [ -n "$cwd" ]; then
+    title=$(basename -- "$cwd")
+else
+    title="Claude Code"
+fi
+
 # ─── Map event → message ─────────────────────────────────────────────────────
 case "$event" in
-    Stop|SubagentStop) message="Claude finished" ;;
+    Stop|SubagentStop) message="Claude Code is waiting for your input" ;;
     Notification)
         # Claude Code sends a human-readable `message` for Notification events
-        # (e.g. permission prompts, idle reminders). Prefer it when present.
+        # (e.g. permission prompts, idle reminders). Prefer it, but rebrand a
+        # leading bare "Claude" as "Claude Code" for consistency.
         if [ -n "$detail" ]; then
-            message="$detail"
+            case "$detail" in
+                "Claude Code"*) message="$detail" ;;
+                "Claude "*)     message="Claude Code ${detail#Claude }" ;;
+                *)              message="$detail" ;;
+            esac
         else
-            message="Claude needs you"
+            message="Claude Code needs your attention"
         fi
         ;;
     *) exit 0 ;;
@@ -66,11 +95,14 @@ esac
 
 # ─── Notifier backends ───────────────────────────────────────────────────────
 notify_icon() {
-    # Opt-in only. -appIcon with an .icns file can suppress the banner entirely
-    # on recent macOS, so we do NOT auto-attach the Claude .icns. Set
-    # CLAUDE_PULSE_NOTIFY_ICON to a PNG to add an icon.
+    # Use a PNG (NOT .icns — an .icns can suppress the banner on recent macOS).
     if [ -n "${CLAUDE_PULSE_NOTIFY_ICON:-}" ] && [ -f "$CLAUDE_PULSE_NOTIFY_ICON" ]; then
         printf '%s' "$CLAUDE_PULSE_NOTIFY_ICON"; return 0
+    fi
+    # A logo PNG generated at install time from the local Claude.app icon and
+    # placed next to this script.
+    if [ -n "${SCRIPT_DIR:-}" ] && [ -f "$SCRIPT_DIR/claude-logo.png" ]; then
+        printf '%s' "$SCRIPT_DIR/claude-logo.png"; return 0
     fi
     return 1
 }
@@ -103,7 +135,7 @@ notify_terminal_notifier() {
     # Run synchronously (no `&`): a backgrounded notifier gets reaped when the
     # hook exits, before macOS posts it. terminal-notifier returns right after
     # posting (no -wait), so this is fast and within the hook timeout.
-    set -- -title "Claude Code" -message "$message"
+    set -- -title "$title" -message "$message"
     [ -n "${CLAUDE_PULSE_NOTIFY_GROUP:-}" ] && set -- "$@" -group "$CLAUDE_PULSE_NOTIFY_GROUP"
     [ -n "$icon" ]   && set -- "$@" -appIcon "$icon"
     [ -n "$sender" ] && set -- "$@" -sender "$sender"
@@ -113,7 +145,7 @@ notify_terminal_notifier() {
 
 notify_alerter() {
     command -v alerter >/dev/null 2>&1 || return 1
-    alerter -title "Claude Code" -message "$message" \
+    alerter -title "$title" -message "$message" \
         -group "claude-pulse" >/dev/null 2>&1 &
     return 0
 }
@@ -122,16 +154,16 @@ notify_send() {
     command -v notify-send >/dev/null 2>&1 || return 1
     icon=$(notify_icon || printf '')
     if [ -n "$icon" ]; then
-        notify-send -a "Claude Code" -i "$icon" "Claude Code" "$message" >/dev/null 2>&1
+        notify-send -a "Claude Code" -i "$icon" "$title" "$message" >/dev/null 2>&1
     else
-        notify-send -a "Claude Code" "Claude Code" "$message" >/dev/null 2>&1
+        notify-send -a "Claude Code" "$title" "$message" >/dev/null 2>&1
     fi
     return 0
 }
 
 notify_osa() {
     command -v osascript >/dev/null 2>&1 || return 1
-    osascript -e "display notification \"$message\" with title \"Claude Code\"" >/dev/null 2>&1
+    osascript -e "display notification \"$message\" with title \"$title\"" >/dev/null 2>&1
     return 0
 }
 

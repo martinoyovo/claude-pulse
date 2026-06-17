@@ -29,9 +29,11 @@ Opus 4.8 │ margin-website │ main* │ ███░░ 64% │ $0.42
 
 Notifications look like:
 
-- **Claude finished** — when a turn ends (`Stop`).
-- **Claude needs you** — when Claude is waiting on you, e.g. a permission
-  prompt (`Notification`; the actual prompt text is used when available).
+- **Claude Code needs your input** — when a turn ends and it's waiting on you
+  (`Stop`).
+- **Claude Code needs your permission…** — when Claude Code is waiting on you,
+  e.g. a permission prompt (`Notification`; the actual prompt text is used when
+  available, rebranded to "Claude Code").
 
 ## Install
 
@@ -87,14 +89,26 @@ token usage = `input + cache_read + cache_creation`).
 
 ### Notifications (`notify.sh`)
 
+The notification mirrors Claude.app's structure: the **title** is the project
+folder name (so you can tell which session is waiting when several are open) and
+the **message** is the status.
+
 | Variable | Default | Effect |
 | --- | --- | --- |
 | `CLAUDE_PULSE_NOTIFY` | `auto` | Backend: `auto`, `terminal-notifier`, `alerter`, `notify-send`, `osa`, `osc9`, `bell`, `off`. |
-| `CLAUDE_PULSE_NOTIFY_ICON` | auto | Image path for `terminal-notifier` / `notify-send`. |
-| `CLAUDE_PULSE_NOTIFY_SENDER` | auto | macOS bundle id for `terminal-notifier`. |
+| `CLAUDE_PULSE_NOTIFY_TITLE` | folder name | Override the notification title. |
+| `CLAUDE_PULSE_NOTIFY_ICON` | auto | PNG path used as the icon. |
+| `CLAUDE_PULSE_NOTIFY_SENDER` | _(off)_ | macOS bundle id for `terminal-notifier` (opt-in; see icon note below). |
 
 `auto` tries, in order: `terminal-notifier` → `alerter` → `notify-send`
 (Linux) → `osascript` (macOS) → terminal bell / OSC-9 escape.
+
+**About the icon.** On Linux the Claude logo shows (via `notify-send -i`). On
+macOS, notifications display the icon of the posting app (`terminal-notifier`'s),
+and the only flag that changes it — `-sender` — hangs unless the target app is
+already running, so it's opt-in via `CLAUDE_PULSE_NOTIFY_SENDER`. The installer
+generates `claude-logo.png` from your local Claude.app for backends that support
+a custom image.
 
 On macOS the built-in `osascript` fallback shows notifications as *Script
 Editor*. For a cleaner source, install `terminal-notifier`:
@@ -115,9 +129,9 @@ echo '{"model":{"display_name":"Opus 4.8"},"cwd":"'"$PWD"'","cost":{"total_cost_
 Notification hook:
 
 ```sh
-echo '{"hook_event_name":"Stop"}' | ~/.claude/claude-pulse/notify.sh        # "Claude finished"
-echo '{"hook_event_name":"Notification","message":"Permission needed"}' \
-  | ~/.claude/claude-pulse/notify.sh                                        # "Permission needed"
+echo '{"hook_event_name":"Stop","cwd":"'"$PWD"'"}' | ~/.claude/claude-pulse/notify.sh   # title=folder, "Claude Code is waiting for your input"
+echo '{"hook_event_name":"Notification","message":"Permission needed","cwd":"'"$PWD"'"}' \
+  | ~/.claude/claude-pulse/notify.sh                                        # title=folder, "Permission needed"
 ```
 
 Real Claude Code test — paste these prompts into a session:
@@ -126,16 +140,17 @@ Real Claude Code test — paste these prompts into a session:
 Run `sleep 8; echo claude-pulse notification test complete` and then stop.
 ```
 
-Switch away while it sleeps. You should get **Claude finished**.
+Switch away while it sleeps. The notification's title is the project folder and
+the message is **Claude Code is waiting for your input**.
 
 ```text
 Run `open -a Calculator` so I can test the approval notification.
 ```
 
-Switch away when Claude asks to approve the command. You should get **Claude
-needs you** (or the permission text itself). This only fires if the command
-isn't already auto-approved — if `open` is allowlisted in your settings, use one
-that isn't, e.g. ``Run `osascript -e 'beep'` ``.
+Switch away when Claude asks to approve the command. You should get the
+permission prompt text (rebranded to **Claude Code**). This only fires if the
+command isn't already auto-approved — if `open` is allowlisted in your settings,
+use one that isn't, e.g. ``Run `osascript -e 'beep'` ``.
 
 ## Uninstall / revert
 
