@@ -122,7 +122,16 @@ notify_sender() {
 }
 
 notify_terminal_notifier() {
-    command -v terminal-notifier >/dev/null 2>&1 || return 1
+    # Prefer the bundled Claude-branded notifier (its own icon is the Claude
+    # logo), built by install.sh. Fall back to the system terminal-notifier.
+    tn=""
+    if [ -n "${SCRIPT_DIR:-}" ] && [ -x "$SCRIPT_DIR/ClaudePulse.app/Contents/MacOS/terminal-notifier" ]; then
+        tn="$SCRIPT_DIR/ClaudePulse.app/Contents/MacOS/terminal-notifier"
+    elif command -v terminal-notifier >/dev/null 2>&1; then
+        tn="terminal-notifier"
+    else
+        return 1
+    fi
     icon=$(notify_icon || printf '')
     sender=$(notify_sender || printf '')
     # Build the args. Default is the bare, proven-reliable form: just a title
@@ -137,9 +146,13 @@ notify_terminal_notifier() {
     # posting (no -wait), so this is fast and within the hook timeout.
     set -- -title "$title" -message "$message"
     [ -n "${CLAUDE_PULSE_NOTIFY_GROUP:-}" ] && set -- "$@" -group "$CLAUDE_PULSE_NOTIFY_GROUP"
-    [ -n "$icon" ]   && set -- "$@" -appIcon "$icon"
+    # The bundled app already carries the Claude icon, so -appIcon is only for
+    # the plain system notifier (and only helps where the backend honors it).
+    if [ "$tn" = "terminal-notifier" ] && [ -n "$icon" ]; then
+        set -- "$@" -appIcon "$icon"
+    fi
     [ -n "$sender" ] && set -- "$@" -sender "$sender"
-    terminal-notifier "$@" >/dev/null 2>&1
+    "$tn" "$@" >/dev/null 2>&1
     return 0
 }
 

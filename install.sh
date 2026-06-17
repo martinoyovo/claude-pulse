@@ -23,6 +23,15 @@ RAW_URL=${PULSE_RAW_URL:-"https://raw.githubusercontent.com/martinoyovo/claude-p
 
 mkdir -p "$INSTALL_DIR" "$CLAUDE_DIR"
 
+resolve_link() {
+    p=$1
+    while [ -L "$p" ]; do
+        t=$(readlink "$p")
+        case "$t" in /*) p=$t ;; *) p=$(dirname "$p")/$t ;; esac
+    done
+    printf '%s' "$p"
+}
+
 fetch_file() {
     url=$1; dst=$2
     if command -v curl >/dev/null 2>&1; then
@@ -64,6 +73,52 @@ LOGO_DST="$INSTALL_DIR/claude-logo.png"
 if command -v sips >/dev/null 2>&1 && [ -f "$CLAUDE_ICNS" ]; then
     sips -s format png "$CLAUDE_ICNS" --out "$LOGO_DST" >/dev/null 2>&1 || rm -f "$LOGO_DST"
 fi
+
+# macOS: build a Claude-branded notifier app so desktop alerts show the Claude
+# logo. A notification shows the icon of the app that POSTS it; terminal-
+# notifier's -sender (the only other way to set the icon) hangs for Claude's
+# bundle id, so we post through a rebranded copy of terminal-notifier whose own
+# icon is the Claude mark. Degrades silently to the plain notifier otherwise.
+NOTIFIER_APP="$INSTALL_DIR/ClaudePulse.app"
+build_macos_notifier() {
+    [ "$(uname -s)" = "Darwin" ] || return 0
+    [ -f "$CLAUDE_ICNS" ] || return 0
+    command -v codesign >/dev/null 2>&1 || return 0
+    tn=$(command -v terminal-notifier 2>/dev/null) || return 0
+    [ -n "$tn" ] || return 0
+    tn=$(resolve_link "$tn")
+
+    app_src=""
+    for cand in \
+        "$(dirname "$(dirname "$tn")")/terminal-notifier.app" \
+        "${tn%/Contents/MacOS/*}"; do
+        if [ -d "$cand" ] && [ -x "$cand/Contents/MacOS/terminal-notifier" ]; then
+            app_src=$cand; break
+        fi
+    done
+    [ -n "$app_src" ] || return 0
+
+    rm -rf "$NOTIFIER_APP"
+    cp -R "$app_src" "$NOTIFIER_APP" 2>/dev/null || return 0
+
+    plist="$NOTIFIER_APP/Contents/Info.plist"
+    icon_file=$(defaults read "$plist" CFBundleIconFile 2>/dev/null || echo "Terminal")
+    case "$icon_file" in *.icns) : ;; *) icon_file="$icon_file.icns" ;; esac
+    cp "$CLAUDE_ICNS" "$NOTIFIER_APP/Contents/Resources/$icon_file" 2>/dev/null || true
+    defaults write "$plist" CFBundleIdentifier "com.claudepulse.notifier" 2>/dev/null || true
+    defaults write "$plist" CFBundleName "Claude Code" 2>/dev/null || true
+    defaults write "$plist" CFBundleDisplayName "Claude Code" 2>/dev/null || true
+    plutil -convert xml1 "$plist" 2>/dev/null || true
+
+    # Re-sign (modifying the bundle broke the original signature) or bail.
+    if ! codesign --force --deep --sign - "$NOTIFIER_APP" >/dev/null 2>&1; then
+        rm -rf "$NOTIFIER_APP"; return 0
+    fi
+    lsr="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+    [ -x "$lsr" ] && "$lsr" -f "$NOTIFIER_APP" >/dev/null 2>&1
+    killall iconservicesagent >/dev/null 2>&1 || true
+}
+build_macos_notifier
 
 merge_settings() {
     if command -v python3 >/dev/null 2>&1; then

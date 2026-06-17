@@ -103,12 +103,16 @@ the **message** is the status.
 `auto` tries, in order: `terminal-notifier` → `alerter` → `notify-send`
 (Linux) → `osascript` (macOS) → terminal bell / OSC-9 escape.
 
-**About the icon.** On Linux the Claude logo shows (via `notify-send -i`). On
-macOS, notifications display the icon of the posting app (`terminal-notifier`'s),
-and the only flag that changes it — `-sender` — hangs unless the target app is
-already running, so it's opt-in via `CLAUDE_PULSE_NOTIFY_SENDER`. The installer
-generates `claude-logo.png` from your local Claude.app for backends that support
-a custom image.
+**About the icon (the Claude logo).** A notification shows the icon of the app
+that posts it. On macOS the installer builds a small Claude-branded notifier —
+`ClaudePulse.app`, a rebranded copy of `terminal-notifier` carrying the icon
+from your local Claude.app — and posts through it, so alerts show the Claude
+logo. This needs `terminal-notifier` and `codesign` (Xcode Command Line Tools);
+macOS may ask you to allow notifications the first time. If it can't be built,
+it falls back to the plain notifier (system icon). On Linux the logo shows via
+`notify-send -i`. (`terminal-notifier`'s `-sender` flag — the other way to set
+the icon — hangs for Claude's bundle id, so it's opt-in only via
+`CLAUDE_PULSE_NOTIFY_SENDER`.)
 
 On macOS the built-in `osascript` fallback shows notifications as *Script
 Editor*. For a cleaner source, install `terminal-notifier`:
