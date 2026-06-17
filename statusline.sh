@@ -157,14 +157,23 @@ if ! is_hidden context; then
     else                         ctx_color="$C_CTX_LOW"
     fi
 
-    # Five-cell block bar.
-    len=5
-    filled=$(( pct * len / 100 ))
+    # Smooth block bar. Each cell holds 8 sub-levels (⅛-block glyphs), so the
+    # bar slides with small changes instead of jumping a whole cell at a time.
+    len=${CLAUDE_PULSE_BAR_WIDTH:-10}
+    eighths=$(( pct * len * 8 / 100 ))
+    full=$(( eighths / 8 ))
+    rem=$(( eighths % 8 ))
     bar=""
     i=0
     while [ "$i" -lt "$len" ]; do
-      if [ "$i" -lt "$filled" ]; then
+      if [ "$i" -lt "$full" ]; then
         bar="${bar}${ctx_color}█${R}"
+      elif [ "$i" -eq "$full" ] && [ "$rem" -gt 0 ]; then
+        case "$rem" in
+          1) ch="▏" ;; 2) ch="▎" ;; 3) ch="▍" ;; 4) ch="▌" ;;
+          5) ch="▋" ;; 6) ch="▊" ;; 7) ch="▉" ;;
+        esac
+        bar="${bar}${ctx_color}${ch}${R}"
       else
         bar="${bar}${C_BAR_EMPTY}░${R}"
       fi
