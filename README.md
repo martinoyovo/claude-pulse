@@ -58,6 +58,26 @@ The installer:
 Then **restart Claude Code** (or start a new session) for the status line to
 appear. The first time a hook runs, Claude Code may ask you to trust it.
 
+The installer also adds a `claude-pulse` command (symlinked onto your `PATH`):
+
+```sh
+claude-pulse update      # re-install the latest version from GitHub
+claude-pulse test        # fire a test notification (or: claude-pulse test notify)
+claude-pulse uninstall   # remove claude-pulse
+claude-pulse version
+```
+
+### Updating
+
+```sh
+claude-pulse update
+```
+
+claude-pulse doesn't auto-update — your installed copy is frozen at install
+time. `claude-pulse update` re-fetches the latest from GitHub and reinstalls in
+place (idempotent; your settings are preserved). If the command isn't on your
+`PATH`, just re-run the `curl … | sh` one-liner.
+
 ### Manual install
 
 Copy the scripts wherever you like and add the blocks from
@@ -163,8 +183,8 @@ takeover is fully reversible — `install.sh` saves your previous status line
 first.
 
 ```sh
-./uninstall.sh                # remove everything, restore your previous status line
-./uninstall.sh --statusline   # revert ONLY the status line, keep notifications
+claude-pulse uninstall                  # remove everything, restore your previous status line
+~/.claude/claude-pulse/uninstall.sh --statusline   # revert ONLY the status line, keep notifications
 ```
 
 - **Full uninstall** removes `~/.claude/claude-pulse/` and strips claude-pulse's

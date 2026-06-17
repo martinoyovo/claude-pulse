@@ -17,6 +17,10 @@ STATUSLINE_SRC="$SCRIPT_DIR/statusline.sh"
 STATUSLINE_DST="$INSTALL_DIR/statusline.sh"
 NOTIFY_SRC="$SCRIPT_DIR/hooks/notify.sh"
 NOTIFY_DST="$INSTALL_DIR/notify.sh"
+UNINSTALL_SRC="$SCRIPT_DIR/uninstall.sh"
+UNINSTALL_DST="$INSTALL_DIR/uninstall.sh"
+CLI_SRC="$SCRIPT_DIR/claude-pulse"
+CLI_DST="$INSTALL_DIR/claude-pulse"
 PREV_STATUSLINE_FILE="$INSTALL_DIR/statusline.prev.json"
 
 RAW_URL=${PULSE_RAW_URL:-"https://raw.githubusercontent.com/martinoyovo/claude-pulse/main"}
@@ -63,7 +67,34 @@ install_file() {
 
 install_file "$STATUSLINE_SRC" "statusline.sh" "$STATUSLINE_DST"
 install_file "$NOTIFY_SRC" "hooks/notify.sh" "$NOTIFY_DST"
-chmod +x "$STATUSLINE_DST" "$NOTIFY_DST" || exit 1
+install_file "$UNINSTALL_SRC" "uninstall.sh" "$UNINSTALL_DST"
+install_file "$CLI_SRC" "claude-pulse" "$CLI_DST"
+chmod +x "$STATUSLINE_DST" "$NOTIFY_DST" "$UNINSTALL_DST" "$CLI_DST" || exit 1
+
+# Symlink the `claude-pulse` CLI onto PATH so `claude-pulse update` works.
+CLI_LINK=""
+CLI_LINK_NOTE=""
+link_cli() {
+    for d in "$HOME/.local/bin" "/usr/local/bin" "/opt/homebrew/bin"; do
+        case ":$PATH:" in
+            *":$d:"*)
+                if [ -d "$d" ] && [ -w "$d" ] && ln -sf "$CLI_DST" "$d/claude-pulse" 2>/dev/null; then
+                    CLI_LINK="$d/claude-pulse"; return 0
+                fi ;;
+        esac
+    done
+    # Nothing writable on PATH — fall back to ~/.local/bin and flag PATH.
+    if mkdir -p "$HOME/.local/bin" 2>/dev/null && ln -sf "$CLI_DST" "$HOME/.local/bin/claude-pulse" 2>/dev/null; then
+        CLI_LINK="$HOME/.local/bin/claude-pulse"
+        case ":$PATH:" in
+            *":$HOME/.local/bin:"*) : ;;
+            *) CLI_LINK_NOTE="Add ~/.local/bin to your PATH to use the 'claude-pulse' command." ;;
+        esac
+        return 0
+    fi
+    return 1
+}
+link_cli || CLI_LINK_NOTE="Could not link the CLI onto PATH; run it as $CLI_DST"
 
 # Source icon for the macOS notifier app (below).
 CLAUDE_ICNS="/Applications/Claude.app/Contents/Resources/electron.icns"
@@ -229,16 +260,25 @@ fi
 printf '\nclaude-pulse installed.\n\n'
 printf 'Installed files:\n'
 printf '  %s\n' "$STATUSLINE_DST"
-printf '  %s\n\n' "$NOTIFY_DST"
+printf '  %s\n' "$NOTIFY_DST"
+printf '  %s\n\n' "$CLI_DST"
 printf 'Wired into:\n'
 printf '  %s  (statusLine + hooks.Stop + hooks.Notification)\n\n' "$SETTINGS_FILE"
 printf 'Claude Code version: %s\n\n' "$claude_version"
+if [ -n "$CLI_LINK" ]; then
+    printf 'CLI available as: %s\n' "$CLI_LINK"
+else
+    printf 'CLI available as: %s\n' "$CLI_DST"
+fi
+printf '  claude-pulse update      # update to the latest version\n'
+printf '  claude-pulse test        # fire a test notification\n'
+printf '  claude-pulse uninstall   # remove claude-pulse\n'
+[ -n "$CLI_LINK_NOTE" ] && printf '  (%s)\n' "$CLI_LINK_NOTE"
+printf '\n'
 if [ -f "$PREV_STATUSLINE_FILE" ]; then
     printf 'Your previous status line was saved. Restore it any time with:\n'
-    printf '  %s/uninstall.sh --statusline\n\n' "$SCRIPT_DIR"
+    printf '  %s --statusline\n\n' "$UNINSTALL_DST"
 fi
 printf 'Restart Claude Code (or start a new session) to see the status line.\n'
-printf 'Test the notification hook with:\n'
-printf '  echo '\''{"hook_event_name":"Stop"}'\'' | %s\n' "$NOTIFY_DST"
 
 exit 0

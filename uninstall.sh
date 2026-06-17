@@ -128,6 +128,15 @@ if [ "$(uname -s 2>/dev/null)" = "Darwin" ] && [ -d "$NOTIFIER_APP" ]; then
     [ -x "$lsr" ] && "$lsr" -u "$NOTIFIER_APP" >/dev/null 2>&1
 fi
 
+# Remove the `claude-pulse` CLI symlink wherever install.sh may have placed it.
+CLI_DST="$INSTALL_DIR/claude-pulse"
+for d in "$HOME/.local/bin" "/usr/local/bin" "/opt/homebrew/bin"; do
+    link="$d/claude-pulse"
+    if [ -L "$link" ] && [ "$(readlink "$link" 2>/dev/null)" = "$CLI_DST" ]; then
+        rm -f "$link"
+    fi
+done
+
 rm -rf "$INSTALL_DIR"
 
 printf '\nclaude-pulse uninstalled.\n'
