@@ -36,6 +36,7 @@ SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 STATUSLINE_DST="$INSTALL_DIR/statusline.sh"
 NOTIFY_DST="$INSTALL_DIR/notify.sh"
 PREV_STATUSLINE_FILE="$INSTALL_DIR/statusline.prev.json"
+NOTIFIER_APP="$INSTALL_DIR/ClaudePulse.app"
 
 if [ -f "$SETTINGS_FILE" ] && command -v python3 >/dev/null 2>&1; then
     MODE=$MODE \
@@ -120,11 +121,22 @@ if [ "$MODE" = "statusline" ]; then
     exit 0
 fi
 
+# macOS: deregister the bundled notifier app from LaunchServices before deleting
+# it, so it doesn't linger as a stale record.
+if [ "$(uname -s 2>/dev/null)" = "Darwin" ] && [ -d "$NOTIFIER_APP" ]; then
+    lsr="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+    [ -x "$lsr" ] && "$lsr" -u "$NOTIFIER_APP" >/dev/null 2>&1
+fi
+
 rm -rf "$INSTALL_DIR"
 
 printf '\nclaude-pulse uninstalled.\n'
 printf 'Removed: %s\n' "$INSTALL_DIR"
 printf 'Cleaned claude-pulse entries from: %s\n' "$SETTINGS_FILE"
+if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+    printf 'Note: macOS may keep a "Claude Code" entry under System Settings >\n'
+    printf 'Notifications for a while; it is harmless and clears on its own.\n'
+fi
 printf 'Restart Claude Code for the change to take effect.\n'
 
 exit 0

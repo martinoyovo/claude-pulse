@@ -175,6 +175,11 @@ first.
   your previous status line (or clears ours) while leaving the notification
   hook and installed files in place. Re-run `install.sh` to take it over again.
 
+A full uninstall also deregisters the bundled notifier app from LaunchServices.
+The one thing it can't force-remove is the **"Claude Code" entry under System
+Settings → Notifications** — macOS keeps notification-permission records even
+after an app is deleted. It's harmless and clears on its own.
+
 Run `./uninstall.sh --help` for details.
 
 ## Notes
