@@ -69,8 +69,8 @@ notify_icon() {
     if [ -n "${CLAUDE_PULSE_NOTIFY_ICON:-}" ] && [ -f "$CLAUDE_PULSE_NOTIFY_ICON" ]; then
         printf '%s' "$CLAUDE_PULSE_NOTIFY_ICON"; return 0
     fi
-    if [ -f "/Applications/Claude.app/Contents/Resources/AppIcon.icns" ]; then
-        printf '%s' "/Applications/Claude.app/Contents/Resources/AppIcon.icns"; return 0
+    if [ -f "/Applications/Claude.app/Contents/Resources/electron.icns" ]; then
+        printf '%s' "/Applications/Claude.app/Contents/Resources/electron.icns"; return 0
     fi
     return 1
 }
