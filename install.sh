@@ -83,6 +83,8 @@ if [ ! -f "$CONFIG_DST" ]; then
 # CLAUDE_PULSE_NERD=1
 #   Emoji icons (work on any terminal, no font needed):
 # CLAUDE_PULSE_EMOJI=1
+#   Plain-text Unicode symbols (no font, no emoji; mostly universal):
+# CLAUDE_PULSE_SYMBOLS=1
 
 # Show/hide the token counts after the % (1 = show, 0 = hide):
 # CLAUDE_PULSE_TOKENS=1

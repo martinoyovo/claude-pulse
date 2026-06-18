@@ -66,6 +66,16 @@ elif [ "${CLAUDE_PULSE_EMOJI:-0}" = "1" ]; then
   G_COST="💰 "
   G_TOOL="🛠️ "
   G_DUR="⏱️ "
+elif [ "${CLAUDE_PULSE_SYMBOLS:-0}" = "1" ]; then
+  # Plain-text Unicode symbols — monochrome, no special font, no emoji.
+  # Widely supported in standard terminal fonts (not Nerd Font glyphs).
+  G_MODEL="✦ "
+  G_DIR="▸ "
+  G_BRANCH="⎇ "
+  G_CTX="▦ "
+  G_COST=""
+  G_TOOL="⚙ "
+  G_DUR="◷ "
 else
   # Plain — no icons, universally renderable text.
   G_MODEL=""
