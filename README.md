@@ -138,7 +138,7 @@ the **message** is the status.
 | `CLAUDE_PULSE_NOTIFY_TITLE` | folder name | Override the notification title. |
 | `CLAUDE_PULSE_NOTIFY_ICON` | _(none)_ | PNG path used as the icon (for `notify-send` / the plain `terminal-notifier` fallback). |
 | `CLAUDE_PULSE_NOTIFY_SENDER` | _(off)_ | macOS bundle id for `terminal-notifier` (opt-in; see icon note below). |
-| `CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED` | `1` | macOS: skip the alert when the app hosting Claude Code (its terminal/desktop app) is the frontmost window — you're already looking at it. Set to `0` to always notify. Fails open (notifies if it can't tell). |
+| `CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED` | `1` | macOS: skip the alert when the terminal tab running this session is the focused window — you're already looking at it. Per-tab precision on Terminal.app & iTerm2 (a *different* tab/window still notifies); app-level elsewhere. Set to `0` to always notify. Fails open. |
 
 `auto` tries, in order: `terminal-notifier` → `alerter` → `notify-send`
 (Linux) → `osascript` (macOS) → terminal bell / OSC-9 escape.

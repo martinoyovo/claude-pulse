@@ -107,32 +107,51 @@ case "$event" in
     *) exit 0 ;;
 esac
 
-# ─── Skip when you're already looking at it (macOS) ──────────────────────────
-# If the app that hosts Claude Code (its terminal — here the Claude desktop app)
-# is the frontmost/focused app, you can see the result yourself, so a desktop
-# alert is just noise. We find the host app from this hook's own process tree
-# and compare its bundle id to the frontmost app's. Fails OPEN: any uncertainty
-# (can't detect host, not macOS, no lsappinfo) → still notify. Disable with
-# CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED=0.
+# ─── Skip when this exact terminal window/tab is focused (macOS) ─────────────
+# If the specific terminal tab running this Claude Code session is the focused
+# window, you can already see the result — so don't alert. We find the host
+# terminal app AND this session's TTY from the hook's own process tree, then ask
+# the terminal which tab is frontmost and compare TTYs. So: claude's own tab
+# focused → skip; a DIFFERENT tab/window, or another app entirely → notify.
+# Per-window precision works on Terminal.app and iTerm2. Fails OPEN (any
+# uncertainty → still notify). Disable with CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED=0.
 if [ "${CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED:-1}" != "0" ] \
    && [ "$(uname -s 2>/dev/null)" = "Darwin" ] \
    && command -v lsappinfo >/dev/null 2>&1; then
-    host_app=""
-    pid=$$
-    n=0
-    while [ "$n" -lt 15 ]; do
+    host_app=""; my_tty=""
+    pid=$$; n=0
+    while [ "$n" -lt 20 ]; do
         exe=$(ps -o comm= -p "$pid" 2>/dev/null)
         case "$exe" in */*.app/Contents/MacOS/*) host_app="${exe%/Contents/MacOS/*}" ;; esac
+        tt=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' ')
+        case "$tt" in ttys*) [ -z "$my_tty" ] && my_tty="$tt" ;; esac
         ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
         { [ -z "$ppid" ] || [ "$ppid" -le 1 ]; } && break
         pid=$ppid; n=$(( n + 1 ))
     done
-    if [ -n "$host_app" ] && [ -f "$host_app/Contents/Info.plist" ]; then
-        host_bid=$(defaults read "$host_app/Contents/Info.plist" CFBundleIdentifier 2>/dev/null)
-        front_bid=$(lsappinfo info -only bundleID "$(lsappinfo front 2>/dev/null)" 2>/dev/null \
-                      | sed 's/.*"\(.*\)".*/\1/' | grep -v '^$' | tail -1)
-        if [ -n "$host_bid" ] && [ "$host_bid" = "$front_bid" ]; then
-            exit 0   # focused on Claude's host app — don't alert
+
+    host_bid=""
+    [ -n "$host_app" ] && [ -f "$host_app/Contents/Info.plist" ] \
+        && host_bid=$(defaults read "$host_app/Contents/Info.plist" CFBundleIdentifier 2>/dev/null)
+    front_bid=$(lsappinfo info -only bundleID "$(lsappinfo front 2>/dev/null)" 2>/dev/null \
+                  | sed 's/.*"\(.*\)".*/\1/' | grep -v '^$' | tail -1)
+
+    # Only consider skipping if the terminal hosting this session is frontmost.
+    if [ -n "$host_bid" ] && [ "$host_bid" = "$front_bid" ]; then
+        front_tty=""
+        case "$host_bid" in
+            com.apple.Terminal)
+                front_tty=$(osascript -e 'tell application "Terminal" to get tty of selected tab of front window' 2>/dev/null) ;;
+            com.googlecode.iterm2)
+                front_tty=$(osascript -e 'tell application "iTerm2" to tell current session of current window to get tty' 2>/dev/null) ;;
+        esac
+        if [ -n "$front_tty" ] && [ -n "$my_tty" ]; then
+            # Per-window precision: skip ONLY if the focused tab is this session's.
+            [ "$front_tty" = "/dev/$my_tty" ] && exit 0
+            # else: a different tab/window of the same terminal → fall through, notify.
+        else
+            # Non-scriptable terminal (or no TTY): host app is frontmost → skip.
+            exit 0
         fi
     fi
 fi
