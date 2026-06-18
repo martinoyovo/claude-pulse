@@ -91,9 +91,18 @@ fi
 case "$event" in
     Stop|SubagentStop) message="Claude Code is waiting for your input" ;;
     Notification)
-        # Claude Code sends a human-readable `message` for Notification events
-        # (e.g. permission prompts, idle reminders). Prefer it, but rebrand a
-        # leading bare "Claude" as "Claude Code" for consistency.
+        # Claude Code's idle reminder ("Claude is waiting for your input"), sent
+        # ~60s after a turn ends, DUPLICATES our Stop notification (which already
+        # fired the moment the turn finished). Skip it by default; still deliver
+        # permission prompts and other notifications. Set CLAUDE_PULSE_NOTIFY_IDLE=1
+        # to keep the idle reminder too.
+        if [ "${CLAUDE_PULSE_NOTIFY_IDLE:-0}" != "1" ]; then
+            case "$detail" in
+                *"waiting for your input"*) exit 0 ;;
+            esac
+        fi
+        # Otherwise (e.g. a permission prompt) prefer the payload text, rebranding
+        # a leading bare "Claude" to "Claude Code".
         if [ -n "$detail" ]; then
             case "$detail" in
                 "Claude Code"*) message="$detail" ;;

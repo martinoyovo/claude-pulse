@@ -139,6 +139,7 @@ the **message** is the status.
 | `CLAUDE_PULSE_NOTIFY_ICON` | _(none)_ | PNG path used as the icon (for `notify-send` / the plain `terminal-notifier` fallback). |
 | `CLAUDE_PULSE_NOTIFY_SENDER` | _(off)_ | macOS bundle id for `terminal-notifier` (opt-in; see icon note below). |
 | `CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED` | `1` | macOS: skip the alert when the terminal tab running this session is the focused window — you're already looking at it. Per-tab precision on Terminal.app & iTerm2 (a *different* tab/window still notifies); app-level elsewhere. Set to `0` to always notify. Fails open. |
+| `CLAUDE_PULSE_NOTIFY_IDLE` | `0` | Claude Code re-pings "waiting for your input" ~60s after a turn ends; that duplicates the `Stop` alert, so it's skipped. Set to `1` to keep that idle reminder too. (Permission prompts always fire.) |
 
 `auto` tries, in order: `terminal-notifier` → `alerter` → `notify-send`
 (Linux) → `osascript` (macOS) → terminal bell / OSC-9 escape.
