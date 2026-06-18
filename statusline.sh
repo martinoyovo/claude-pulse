@@ -49,6 +49,7 @@ fi
 
 # ─── Glyphs (Nerd Font opt-in, plain by default) ─────────────────────────────
 if [ "${CLAUDE_PULSE_NERD:-0}" = "1" ]; then
+  # Nerd Font glyphs — crisp, but need a Nerd Font installed + selected.
   G_MODEL=" "
   G_DIR=" "
   G_BRANCH=" "
@@ -56,7 +57,17 @@ if [ "${CLAUDE_PULSE_NERD:-0}" = "1" ]; then
   G_COST=" "
   G_TOOL=" "
   G_DUR=" "
+elif [ "${CLAUDE_PULSE_EMOJI:-0}" = "1" ]; then
+  # Emoji — render on any terminal with zero setup (no font needed).
+  G_MODEL="🤖 "
+  G_DIR="📁 "
+  G_BRANCH="🌿 "
+  G_CTX="📊 "
+  G_COST="💰 "
+  G_TOOL="🛠️ "
+  G_DUR="⏱️ "
 else
+  # Plain — no icons, universally renderable text.
   G_MODEL=""
   G_DIR=""
   G_BRANCH=""

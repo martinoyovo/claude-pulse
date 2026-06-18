@@ -78,8 +78,11 @@ if [ ! -f "$CONFIG_DST" ]; then
 # claude-pulse config — edit to taste. Sourced by the scripts; survives updates.
 # Uncomment a line to enable it.
 
-# Nerd Font glyphs in the status line (needs a Nerd Font in your terminal):
+# Icons (default is clean text — no icons, works on every terminal):
+#   Nerd Font glyphs (crisp, but NEEDS a Nerd Font installed + selected):
 # CLAUDE_PULSE_NERD=1
+#   Emoji icons (work on any terminal, no font needed):
+# CLAUDE_PULSE_EMOJI=1
 
 # Show/hide the token counts after the % (1 = show, 0 = hide):
 # CLAUDE_PULSE_TOKENS=1
