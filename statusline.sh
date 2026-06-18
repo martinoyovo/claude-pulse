@@ -257,21 +257,22 @@ if ! is_hidden lines; then
   fi
 fi
 
-# ─── Segment: session mode (plan / accept-edits / bypass) ────────────────────
-# A real "state" signal from the transcript. Shown only when NOT normal, so it
-# stays invisible during ordinary work and pops when the mode is noteworthy.
+# ─── Segment: session mode (plan / auto-accept / bypass) ─────────────────────
+# A real "state" signal: Claude Code records the active permission mode as
+# "permissionMode" on transcript entries (values: default, auto, plan,
+# bypassPermissions). The {"type":"mode"} entries are unrelated and stay
+# "normal", so we read the most recent permissionMode. Shown only when NOT the
+# default, so it's silent during ordinary work and pops when noteworthy.
 SEG_MODE=""
-if ! is_hidden mode && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] && command -v jq >/dev/null 2>&1; then
-  mode_line=$(grep '"type":"mode"' "$TRANSCRIPT" 2>/dev/null | tail -n 1)
-  if [ -n "$mode_line" ]; then
-    mode=$(printf '%s' "$mode_line" | jq -r '.mode // ""' 2>/dev/null)
-    case "$mode" in
-      plan)              SEG_MODE="${C_MODE}${B}◆ PLAN${R}" ;;
-      acceptEdits)       SEG_MODE="${C_CTX_MID}${B}◆ ACCEPT EDITS${R}" ;;
-      bypassPermissions) SEG_MODE="${C_CTX_HIGH}${B}◆ BYPASS${R}" ;;
-      *) ;;  # normal / unknown → no badge
-    esac
-  fi
+if ! is_hidden mode && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+  pmode=$(grep -oE '"permissionMode":"[^"]*"' "$TRANSCRIPT" 2>/dev/null \
+            | tail -n 1 | sed 's/.*:"\(.*\)"/\1/')
+  case "$pmode" in
+    plan)                     SEG_MODE="${C_MODE}${B}◆ PLAN${R}" ;;
+    auto|acceptEdits)         SEG_MODE="${C_CTX_MID}${B}◆ AUTO${R}" ;;
+    bypassPermissions|bypass) SEG_MODE="${C_CTX_HIGH}${B}◆ BYPASS${R}" ;;
+    *) ;;  # default / normal / empty → no badge
+  esac
 fi
 
 # ─── Segment: tool activity (most-used tool + count) ─────────────────────────
