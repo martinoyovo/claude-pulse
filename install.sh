@@ -71,6 +71,32 @@ install_file "$UNINSTALL_SRC" "uninstall.sh" "$UNINSTALL_DST"
 install_file "$CLI_SRC" "claude-pulse" "$CLI_DST"
 chmod +x "$STATUSLINE_DST" "$NOTIFY_DST" "$UNINSTALL_DST" "$CLI_DST" || exit 1
 
+# Create a config file (sourced by the scripts) if absent — never clobber edits.
+CONFIG_DST="$INSTALL_DIR/config.sh"
+if [ ! -f "$CONFIG_DST" ]; then
+    cat > "$CONFIG_DST" <<'EOF'
+# claude-pulse config — edit to taste. Sourced by the scripts; survives updates.
+# Uncomment a line to enable it.
+
+# Nerd Font glyphs in the status line (needs a Nerd Font in your terminal):
+# CLAUDE_PULSE_NERD=1
+
+# Show/hide the token counts after the % (1 = show, 0 = hide):
+# CLAUDE_PULSE_TOKENS=1
+
+# Context bar width, in cells:
+# CLAUDE_PULSE_BAR_WIDTH=10
+
+# Hide status-line segments (comma list): model,dir,branch,context,cost
+# CLAUDE_PULSE_HIDE=
+
+# Notifications:
+# CLAUDE_PULSE_NOTIFY=auto
+# CLAUDE_PULSE_NOTIFY_TITLE=
+# CLAUDE_PULSE_NOTIFY_ICON=
+EOF
+fi
+
 # Symlink the `claude-pulse` CLI onto PATH so `claude-pulse update` works.
 CLI_LINK=""
 CLI_LINK_NOTE=""

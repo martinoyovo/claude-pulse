@@ -23,6 +23,10 @@ set -uo pipefail
 
 INPUT_JSON=$(cat 2>/dev/null) || INPUT_JSON=""
 
+# Load user config (sourced; survives `claude-pulse update`). Sets CLAUDE_PULSE_*.
+SELF_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
+[ -n "${SELF_DIR:-}" ] && [ -f "$SELF_DIR/config.sh" ] && . "$SELF_DIR/config.sh"
+
 # ─── ANSI helpers ────────────────────────────────────────────────────────────
 if [ -n "${NO_COLOR:-}" ]; then
   R="" B="" D="" I=""
@@ -187,7 +191,20 @@ if ! is_hidden context; then
       fi
       i=$(( i + 1 ))
     done
-    SEG_CTX="${ctx_color}${G_CTX}${R}${bar} ${ctx_color}${pct}%${R}"
+
+    # Human-readable token counts, e.g. 368K / 1.0M.
+    human() {
+      n=$1
+      if   [ "$n" -ge 1000000 ]; then printf '%d.%dM' "$((n/1000000))" "$(((n%1000000)/100000))"
+      elif [ "$n" -ge 1000 ];    then printf '%dK' "$((n/1000))"
+      else                            printf '%d' "$n"
+      fi
+    }
+    counts=""
+    if [ "${CLAUDE_PULSE_TOKENS:-1}" != "0" ]; then
+      counts=" ${D}($(human "$used")/$(human "$limit"))${R}"
+    fi
+    SEG_CTX="${ctx_color}${G_CTX}${R}${bar} ${ctx_color}${pct}%${R}${counts}"
   fi
 fi
 

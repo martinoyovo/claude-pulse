@@ -91,14 +91,24 @@ chmod +x ~/.claude/claude-pulse/*.sh
 
 ## Configuration
 
-Everything is controlled by environment variables — set them in your shell
-profile so Claude Code's spawned commands inherit them.
+Set these as environment variables, or — easier — edit
+`~/.claude/claude-pulse/config.sh`, which the scripts source on every run and
+which **survives `claude-pulse update`**. The installer drops a commented
+template there. Example:
+
+```sh
+# ~/.claude/claude-pulse/config.sh
+CLAUDE_PULSE_NERD=1        # use Nerd Font icons
+CLAUDE_PULSE_BAR_WIDTH=12  # a slightly longer bar
+```
 
 ### Status line (`statusline.sh`)
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| `CLAUDE_PULSE_NERD` | `0` | Set to `1` to use [Nerd Font](https://www.nerdfonts.com/) glyphs. Off uses plain, universally-renderable text. |
+| `CLAUDE_PULSE_NERD` | `0` | Set to `1` to use [Nerd Font](https://www.nerdfonts.com/) glyphs (model, folder, branch, gauge, cost). Off uses plain, universally-renderable text. |
+| `CLAUDE_PULSE_TOKENS` | `1` | Show token counts after the % — e.g. `38% (388K/1.0M)`. Set to `0` to hide. |
+| `CLAUDE_PULSE_BAR_WIDTH` | `10` | Width of the context bar, in cells. |
 | `CLAUDE_PULSE_CONTEXT_LIMIT` | auto | Override the context-window size in tokens. Auto-detects 1M for `…1m…` model ids, else 200k — and steps 200k → 1M automatically if usage exceeds 200k (so a 1M session never gets stuck pegged at 100%). |
 | `CLAUDE_PULSE_HIDE` | _(none)_ | Comma list of segments to hide: `model`, `dir`, `branch`, `context`, `cost`. |
 | `NO_COLOR` | _(unset)_ | Standard [`NO_COLOR`](https://no-color.org/) — disables all ANSI color. |

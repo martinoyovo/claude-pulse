@@ -30,6 +30,8 @@ esac
 
 # Where this script lives, so we can find a bundled logo next to it.
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd) || SCRIPT_DIR=
+# Load user config (sourced; survives `claude-pulse update`).
+[ -n "${SCRIPT_DIR:-}" ] && [ -f "$SCRIPT_DIR/config.sh" ] && . "$SCRIPT_DIR/config.sh"
 
 # ─── Parse the event name (jq → python3 → sed fallback) ──────────────────────
 event=
