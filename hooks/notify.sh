@@ -37,10 +37,12 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd) || SCRIPT_DI
 event=
 detail=
 cwd=
+transcript=
 if command -v jq >/dev/null 2>&1; then
     event=$(printf '%s' "$payload" | jq -r '.hook_event_name // ""' 2>/dev/null) || event=
     detail=$(printf '%s' "$payload" | jq -r '.message // ""' 2>/dev/null) || detail=
     cwd=$(printf '%s' "$payload" | jq -r '.cwd // .workspace.current_dir // ""' 2>/dev/null) || cwd=
+    transcript=$(printf '%s' "$payload" | jq -r '.transcript_path // ""' 2>/dev/null) || transcript=
 fi
 
 if [ -z "$cwd" ]; then
@@ -66,9 +68,19 @@ if [ -z "$event" ]; then
         sed -n '1p')
 fi
 
-# ─── Title: the project folder name (like Claude.app) ────────────────────────
+# ─── Title: session title → project folder name (like Claude.app) ────────────
+# Prefer the conversation's custom title (set in the transcript), so you can
+# tell which session pinged you; fall back to the folder name.
+session_title=
+if [ -n "$transcript" ] && [ -f "$transcript" ] && command -v jq >/dev/null 2>&1; then
+    title_line=$(grep '"type":"custom-title"' "$transcript" 2>/dev/null | tail -n 1)
+    [ -n "$title_line" ] && session_title=$(printf '%s' "$title_line" | jq -r '.customTitle // ""' 2>/dev/null)
+fi
+
 if [ -n "${CLAUDE_PULSE_NOTIFY_TITLE:-}" ]; then
     title="$CLAUDE_PULSE_NOTIFY_TITLE"
+elif [ -n "$session_title" ]; then
+    title="$session_title"
 elif [ -n "$cwd" ]; then
     title=$(basename -- "$cwd")
 else

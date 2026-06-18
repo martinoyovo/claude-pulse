@@ -16,16 +16,24 @@ segment). No frameworks.
 The status line is a single, color-coded line:
 
 ```
-Opus 4.8 │ margin-website │ main* │ ███░░ 64% │ $0.42
+◆ PLAN │ Opus 4.8 │ margin-website │ main* │ Bash 105 │ +128/−34 │ ████▊░░░░░ 48% (480K/1.0M) │ 8m │ $2.47
 ```
 
 | Segment | Shows | Color |
 | --- | --- | --- |
+| `◆ PLAN` | Session mode — only shown when **not** normal (`plan` / `acceptEdits` / `bypassPermissions`) | purple / yellow / red |
 | `Opus 4.8` | Model display name | magenta |
 | `margin-website` | Current directory (basename) | cyan |
 | `main*` | Git branch — `*` means dirty working tree | blue / yellow `*` |
-| `███░░ 64%` | Context-window usage (green → yellow → red) | by threshold |
-| `$0.42` | Session cost so far | green |
+| `Bash 105` | Most-used tool this session + count | purple |
+| `+128/−34` | Lines added / removed this session | green / red |
+| `████▊░░░░░ 48% (480K/1.0M)` | Context-window usage + tokens (green → yellow → red) | by threshold |
+| `8m` | Session duration | gray |
+| `$2.47` | Session cost so far | green |
+
+Every segment is optional — hide any with `CLAUDE_PULSE_HIDE`. The `mode`,
+`tools`, `lines`, and `duration` segments only appear when they have something
+to show.
 
 Notifications look like:
 
@@ -110,7 +118,7 @@ CLAUDE_PULSE_BAR_WIDTH=12  # a slightly longer bar
 | `CLAUDE_PULSE_TOKENS` | `1` | Show token counts after the % — e.g. `38% (388K/1.0M)`. Set to `0` to hide. |
 | `CLAUDE_PULSE_BAR_WIDTH` | `10` | Width of the context bar, in cells. |
 | `CLAUDE_PULSE_CONTEXT_LIMIT` | auto | Override the context-window size in tokens. Auto-detects 1M for `…1m…` model ids, else 200k — and steps 200k → 1M automatically if usage exceeds 200k (so a 1M session never gets stuck pegged at 100%). |
-| `CLAUDE_PULSE_HIDE` | _(none)_ | Comma list of segments to hide: `model`, `dir`, `branch`, `context`, `cost`. |
+| `CLAUDE_PULSE_HIDE` | _(none)_ | Comma list of segments to hide: `mode`, `model`, `dir`, `branch`, `tools`, `lines`, `context`, `duration`, `cost`. |
 | `NO_COLOR` | _(unset)_ | Standard [`NO_COLOR`](https://no-color.org/) — disables all ANSI color. |
 
 The context-window percentage isn't in Claude Code's status payload, so

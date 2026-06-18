@@ -30,10 +30,11 @@ SELF_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
 # ─── ANSI helpers ────────────────────────────────────────────────────────────
 if [ -n "${NO_COLOR:-}" ]; then
   R="" B="" D="" I=""
-  C_MODEL="" C_DIR="" C_BRANCH="" C_DIRTY="" C_COST="" C_SEP=""
+  C_MODEL="" C_DIR="" C_BRANCH="" C_DIRTY="" C_COST="" C_SEP="" C_MODE=""
   C_CTX_LOW="" C_CTX_MID="" C_CTX_HIGH="" C_BAR_EMPTY=""
 else
   R=$'\033[0m'; B=$'\033[1m'; D=$'\033[2m'; I=$'\033[3m'
+  C_MODE=$'\033[38;5;141m' # purple (plan badge)
   C_MODEL=$'\033[95m'      # bright magenta
   C_DIR=$'\033[96m'        # bright cyan
   C_BRANCH=$'\033[94m'     # bright blue
@@ -53,12 +54,16 @@ if [ "${CLAUDE_PULSE_NERD:-0}" = "1" ]; then
   G_BRANCH=" "
   G_CTX="󰓅 "
   G_COST=" "
+  G_TOOL=" "
+  G_DUR=" "
 else
   G_MODEL=""
   G_DIR=""
   G_BRANCH=""
   G_CTX=""
   G_COST=""
+  G_TOOL=""
+  G_DUR=""
 fi
 
 SEP="${C_SEP} │ ${R}"
@@ -71,17 +76,23 @@ if command -v jq >/dev/null 2>&1 && [ -n "$INPUT_JSON" ]; then
     read -r CWD
     read -r TRANSCRIPT
     read -r COST
+    read -r LINES_ADD
+    read -r LINES_DEL
+    read -r DURATION_MS
   } <<EOF
 $(printf '%s' "$INPUT_JSON" | jq -r '
     (.model.display_name // .model.id // ""),
     (.model.id // ""),
     (.workspace.current_dir // .cwd // ""),
     (.transcript_path // ""),
-    (.cost.total_cost_usd // 0)
-  ' 2>/dev/null || printf '\n\n\n\n0\n')
+    (.cost.total_cost_usd // 0),
+    (.cost.total_lines_added // 0),
+    (.cost.total_lines_removed // 0),
+    (.cost.total_duration_ms // 0)
+  ' 2>/dev/null || printf '\n\n\n\n0\n0\n0\n0\n')
 EOF
 else
-  MODEL=""; MODEL_ID=""; CWD="$PWD"; TRANSCRIPT=""; COST=0
+  MODEL=""; MODEL_ID=""; CWD="$PWD"; TRANSCRIPT=""; COST=0; LINES_ADD=0; LINES_DEL=0; DURATION_MS=0
 fi
 
 [ -n "$CWD" ] || CWD="$PWD"
@@ -215,9 +226,62 @@ if ! is_hidden cost; then
   SEG_COST="${C_COST}${G_COST}\$${cost_fmt}${R}"
 fi
 
+# ─── Segment: lines changed this session (+added / −removed) ─────────────────
+SEG_LINES=""
+if ! is_hidden lines; then
+  [ -n "$LINES_ADD" ] && [ "$LINES_ADD" -ge 0 ] 2>/dev/null || LINES_ADD=0
+  [ -n "$LINES_DEL" ] && [ "$LINES_DEL" -ge 0 ] 2>/dev/null || LINES_DEL=0
+  if [ "$LINES_ADD" -gt 0 ] || [ "$LINES_DEL" -gt 0 ] 2>/dev/null; then
+    SEG_LINES="${C_CTX_LOW}+${LINES_ADD}${R}${C_SEP}/${R}${C_CTX_HIGH}−${LINES_DEL}${R}"
+  fi
+fi
+
+# ─── Segment: session mode (plan / accept-edits / bypass) ────────────────────
+# A real "state" signal from the transcript. Shown only when NOT normal, so it
+# stays invisible during ordinary work and pops when the mode is noteworthy.
+SEG_MODE=""
+if ! is_hidden mode && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] && command -v jq >/dev/null 2>&1; then
+  mode_line=$(grep '"type":"mode"' "$TRANSCRIPT" 2>/dev/null | tail -n 1)
+  if [ -n "$mode_line" ]; then
+    mode=$(printf '%s' "$mode_line" | jq -r '.mode // ""' 2>/dev/null)
+    case "$mode" in
+      plan)              SEG_MODE="${C_MODE}${B}◆ PLAN${R}" ;;
+      acceptEdits)       SEG_MODE="${C_CTX_MID}${B}◆ ACCEPT EDITS${R}" ;;
+      bypassPermissions) SEG_MODE="${C_CTX_HIGH}${B}◆ BYPASS${R}" ;;
+      *) ;;  # normal / unknown → no badge
+    esac
+  fi
+fi
+
+# ─── Segment: tool activity (most-used tool + count) ─────────────────────────
+SEG_TOOLS=""
+if ! is_hidden tools && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] && command -v jq >/dev/null 2>&1; then
+  top=$(jq -rc 'select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .name' \
+          "$TRANSCRIPT" 2>/dev/null | sort | uniq -c | sort -rn | head -n 1)
+  if [ -n "$top" ]; then
+    t_count=$(printf '%s' "$top" | awk '{print $1}')
+    t_name=$(printf '%s' "$top" | awk '{print $2}')
+    [ -n "$t_name" ] && SEG_TOOLS="${C_MODE}${G_TOOL}${t_name}${R} ${D}${t_count}${R}"
+  fi
+fi
+
+# ─── Segment: session duration ───────────────────────────────────────────────
+SEG_DURATION=""
+if ! is_hidden duration; then
+  [ -n "$DURATION_MS" ] && [ "$DURATION_MS" -gt 0 ] 2>/dev/null || DURATION_MS=0
+  if [ "$DURATION_MS" -gt 0 ] 2>/dev/null; then
+    secs=$(( DURATION_MS / 1000 ))
+    if   [ "$secs" -ge 3600 ]; then dur="$(( secs / 3600 ))h$(( (secs % 3600) / 60 ))m"
+    elif [ "$secs" -ge 60 ];   then dur="$(( secs / 60 ))m"
+    else                            dur="${secs}s"
+    fi
+    SEG_DURATION="${C_SEP}${G_DUR}${dur}${R}"
+  fi
+fi
+
 # ─── Assemble (skip empty segments, join with separator) ─────────────────────
 out=""
-for seg in "$SEG_MODEL" "$SEG_DIR" "$SEG_BRANCH" "$SEG_CTX" "$SEG_COST"; do
+for seg in "$SEG_MODE" "$SEG_MODEL" "$SEG_DIR" "$SEG_BRANCH" "$SEG_TOOLS" "$SEG_LINES" "$SEG_CTX" "$SEG_DURATION" "$SEG_COST"; do
   [ -n "$seg" ] || continue
   if [ -z "$out" ]; then
     out="$seg"
