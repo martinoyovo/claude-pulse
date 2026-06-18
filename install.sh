@@ -316,5 +316,7 @@ if [ -f "$PREV_STATUSLINE_FILE" ]; then
     printf '  %s --statusline\n\n' "$UNINSTALL_DST"
 fi
 printf 'Restart Claude Code (or start a new session) to see the status line.\n'
+printf 'Tip: the first time you click a notification, macOS asks to allow\n'
+printf 'controlling your terminal (for jump-to-tab) — approve it once.\n'
 
 exit 0

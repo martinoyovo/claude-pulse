@@ -226,6 +226,11 @@ Run `./uninstall.sh --help` for details.
 
 ## Notes
 
+- **First click asks for permission.** The first time you click a notification
+  (click-to-focus), macOS shows a one-time prompt to let the notifier control
+  Terminal/iTerm (Automation permission). Allow it — that first click is consumed
+  by the dialog; every click afterward jumps straight to the tab. This can't be
+  pre-granted; it's macOS's by-design approval.
 - Hooks are not supported on Windows shells; the notifier exits quietly there.
 - Everything degrades gracefully: missing fields, no transcript, no `jq`, or no
   `git` just drop the affected segment rather than erroring.
