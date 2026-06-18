@@ -4,7 +4,7 @@
 
 set -u
 
-CLAUDE_PULSE_VERSION="0.6.2"
+CLAUDE_PULSE_VERSION="0.6.3"
 CLAUDE_DIR=${CLAUDE_CONFIG_DIR:-"$HOME/.claude"}
 INSTALL_DIR="$CLAUDE_DIR/claude-pulse"
 RAW_URL=${PULSE_RAW_URL:-"https://raw.githubusercontent.com/martinoyovo/claude-pulse/main"}
@@ -16,6 +16,7 @@ claude-pulse $CLAUDE_PULSE_VERSION — status line + notifications for Claude Co
 Usage: claude-pulse <command>
 
   update              Re-install the latest version from GitHub.
+  install, reinstall  Alias for update (fetch + (re)install latest).
   uninstall           Remove claude-pulse entirely.
   test [stop|notify]  Fire a test desktop notification (default: stop).
   version             Print the installed version.
@@ -32,8 +33,8 @@ fetch() {
 
 cmd=${1:-help}
 case "$cmd" in
-    update|--update|-u)
-        printf 'Updating claude-pulse (current: %s) from %s ...\n' "$CLAUDE_PULSE_VERSION" "$RAW_URL"
+    update|--update|-u|install|--install|reinstall|--reinstall)
+        printf 'Installing claude-pulse (latest) from %s ...\n' "$RAW_URL"
         fetch "$RAW_URL/install.sh" | sh
         ;;
     uninstall|--uninstall)
