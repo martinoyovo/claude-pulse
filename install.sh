@@ -99,6 +99,8 @@ if [ ! -f "$CONFIG_DST" ]; then
 # CLAUDE_PULSE_NOTIFY=auto
 # CLAUDE_PULSE_NOTIFY_TITLE=
 # CLAUDE_PULSE_NOTIFY_ICON=
+#   Skip the alert when you're already looking at Claude (macOS); 0 = always notify:
+# CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED=1
 EOF
 fi
 

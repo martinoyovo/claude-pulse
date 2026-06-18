@@ -107,6 +107,36 @@ case "$event" in
     *) exit 0 ;;
 esac
 
+# ─── Skip when you're already looking at it (macOS) ──────────────────────────
+# If the app that hosts Claude Code (its terminal — here the Claude desktop app)
+# is the frontmost/focused app, you can see the result yourself, so a desktop
+# alert is just noise. We find the host app from this hook's own process tree
+# and compare its bundle id to the frontmost app's. Fails OPEN: any uncertainty
+# (can't detect host, not macOS, no lsappinfo) → still notify. Disable with
+# CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED=0.
+if [ "${CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED:-1}" != "0" ] \
+   && [ "$(uname -s 2>/dev/null)" = "Darwin" ] \
+   && command -v lsappinfo >/dev/null 2>&1; then
+    host_app=""
+    pid=$$
+    n=0
+    while [ "$n" -lt 15 ]; do
+        exe=$(ps -o comm= -p "$pid" 2>/dev/null)
+        case "$exe" in */*.app/Contents/MacOS/*) host_app="${exe%/Contents/MacOS/*}" ;; esac
+        ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+        { [ -z "$ppid" ] || [ "$ppid" -le 1 ]; } && break
+        pid=$ppid; n=$(( n + 1 ))
+    done
+    if [ -n "$host_app" ] && [ -f "$host_app/Contents/Info.plist" ]; then
+        host_bid=$(defaults read "$host_app/Contents/Info.plist" CFBundleIdentifier 2>/dev/null)
+        front_bid=$(lsappinfo info -only bundleID "$(lsappinfo front 2>/dev/null)" 2>/dev/null \
+                      | sed 's/.*"\(.*\)".*/\1/' | grep -v '^$' | tail -1)
+        if [ -n "$host_bid" ] && [ "$host_bid" = "$front_bid" ]; then
+            exit 0   # focused on Claude's host app — don't alert
+        fi
+    fi
+fi
+
 # ─── Notifier backends ───────────────────────────────────────────────────────
 notify_icon() {
     # Manual override only (a PNG — NOT .icns, which can suppress the banner on
