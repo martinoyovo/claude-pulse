@@ -104,6 +104,8 @@ if [ ! -f "$CONFIG_DST" ]; then
 # CLAUDE_PULSE_NOTIFY_ICON=
 #   Skip the alert when you're already looking at Claude (macOS); 0 = always notify:
 # CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED=1
+#   Notification sound: default | a name (Ping/Glass/Hero/…) | off:
+# CLAUDE_PULSE_NOTIFY_SOUND=default
 EOF
 fi
 

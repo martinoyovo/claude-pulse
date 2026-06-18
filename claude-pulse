@@ -4,7 +4,7 @@
 
 set -u
 
-CLAUDE_PULSE_VERSION="0.6.3"
+CLAUDE_PULSE_VERSION="0.6.4"
 CLAUDE_DIR=${CLAUDE_CONFIG_DIR:-"$HOME/.claude"}
 INSTALL_DIR="$CLAUDE_DIR/claude-pulse"
 RAW_URL=${PULSE_RAW_URL:-"https://raw.githubusercontent.com/martinoyovo/claude-pulse/main"}

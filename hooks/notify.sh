@@ -216,6 +216,11 @@ notify_terminal_notifier() {
     # hook exits, before macOS posts it. terminal-notifier returns right after
     # posting (no -wait), so this is fast and within the hook timeout.
     set -- -title "$title" -message "$message"
+    # Play a sound (silent by default in terminal-notifier otherwise). macOS
+    # auto-silences it under Do Not Disturb / Focus. "default" = your alert sound;
+    # set CLAUDE_PULSE_NOTIFY_SOUND=off for silent, or a name like Ping/Glass/Hero.
+    snd="${CLAUDE_PULSE_NOTIFY_SOUND:-default}"
+    case "$snd" in off|none|"") : ;; *) set -- "$@" -sound "$snd" ;; esac
     [ -n "${CLAUDE_PULSE_NOTIFY_GROUP:-}" ] && set -- "$@" -group "$CLAUDE_PULSE_NOTIFY_GROUP"
     # The bundled app already carries the Claude icon. Only the plain system
     # notifier needs an explicit -appIcon (and only where the backend honors it).
@@ -260,7 +265,13 @@ notify_send() {
 
 notify_osa() {
     command -v osascript >/dev/null 2>&1 || return 1
-    osascript -e "display notification \"$message\" with title \"$title\"" >/dev/null 2>&1
+    # osascript has no "default" sound, so map default → Ping; off → no sound.
+    snd="${CLAUDE_PULSE_NOTIFY_SOUND:-default}"
+    case "$snd" in
+        off|none|"") osascript -e "display notification \"$message\" with title \"$title\"" >/dev/null 2>&1 ;;
+        default)     osascript -e "display notification \"$message\" with title \"$title\" sound name \"Ping\"" >/dev/null 2>&1 ;;
+        *)           osascript -e "display notification \"$message\" with title \"$title\" sound name \"$snd\"" >/dev/null 2>&1 ;;
+    esac
     return 0
 }
 

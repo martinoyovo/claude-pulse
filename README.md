@@ -163,6 +163,7 @@ the **message** is the status.
 | `CLAUDE_PULSE_NOTIFY_SKIP_FOCUSED` | `1` | macOS: skip the alert when the terminal tab running this session is the focused window — you're already looking at it. Per-tab precision on Terminal.app & iTerm2 (a *different* tab/window still notifies); app-level elsewhere. Set to `0` to always notify. Fails open. |
 | `CLAUDE_PULSE_NOTIFY_IDLE` | `0` | Claude Code re-pings "waiting for your input" ~60s after a turn ends; that duplicates the `Stop` alert, so it's skipped. Set to `1` to keep that idle reminder too. (Permission prompts always fire.) |
 | `CLAUDE_PULSE_NOTIFY_FOCUS_ON_CLICK` | `1` | macOS: clicking the notification jumps to the exact terminal tab that pinged you (matched by TTY). Terminal.app & iTerm2. Set to `0` to disable. |
+| `CLAUDE_PULSE_NOTIFY_SOUND` | `default` | Notification sound. `default` = your macOS alert sound; a name like `Ping`/`Glass`/`Hero`/`Submarine`; or `off` for silent. macOS auto-silences it under Do Not Disturb / Focus. |
 
 `auto` tries, in order: `terminal-notifier` → `alerter` → `notify-send`
 (Linux) → `osascript` (macOS) → terminal bell / OSC-9 escape.
