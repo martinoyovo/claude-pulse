@@ -216,11 +216,8 @@ notify_terminal_notifier() {
     # hook exits, before macOS posts it. terminal-notifier returns right after
     # posting (no -wait), so this is fast and within the hook timeout.
     set -- -title "$title" -message "$message"
-    # Play a sound (silent by default in terminal-notifier otherwise). macOS
-    # auto-silences it under Do Not Disturb / Focus. "default" = your alert sound;
-    # set CLAUDE_PULSE_NOTIFY_SOUND=off for silent, or a name like Ping/Glass/Hero.
-    snd="${CLAUDE_PULSE_NOTIFY_SOUND:-default}"
-    case "$snd" in off|none|"") : ;; *) set -- "$@" -sound "$snd" ;; esac
+    # NOTE: we do NOT pass -sound here. macOS ignores it for our ad-hoc-signed
+    # bundle, so the sound is played separately via afplay (see play_sound).
     [ -n "${CLAUDE_PULSE_NOTIFY_GROUP:-}" ] && set -- "$@" -group "$CLAUDE_PULSE_NOTIFY_GROUP"
     # The bundled app already carries the Claude icon. Only the plain system
     # notifier needs an explicit -appIcon (and only where the backend honors it).
@@ -265,14 +262,42 @@ notify_send() {
 
 notify_osa() {
     command -v osascript >/dev/null 2>&1 || return 1
-    # osascript has no "default" sound, so map default → Ping; off → no sound.
-    snd="${CLAUDE_PULSE_NOTIFY_SOUND:-default}"
-    case "$snd" in
-        off|none|"") osascript -e "display notification \"$message\" with title \"$title\"" >/dev/null 2>&1 ;;
-        default)     osascript -e "display notification \"$message\" with title \"$title\" sound name \"Ping\"" >/dev/null 2>&1 ;;
-        *)           osascript -e "display notification \"$message\" with title \"$title\" sound name \"$snd\"" >/dev/null 2>&1 ;;
-    esac
+    osascript -e "display notification \"$message\" with title \"$title\"" >/dev/null 2>&1
     return 0
+}
+
+# Play the notification sound ourselves — terminal-notifier's -sound is ignored
+# for our ad-hoc bundle, so we use afplay. macOS only. Gated by Focus/DND: silent
+# when a Focus mode is active (matches macOS's own notification behavior).
+# CLAUDE_PULSE_NOTIFY_SOUND: default | a /System/Library/Sounds name (Ping, Glass,
+# Hero, Submarine, …) | off.
+play_sound() {
+    [ "$(uname -s 2>/dev/null)" = "Darwin" ] || return 0
+    command -v afplay >/dev/null 2>&1 || return 0
+    snd="${CLAUDE_PULSE_NOTIFY_SOUND:-default}"
+    case "$snd" in off|none|"") return 0 ;; esac
+    # Skip the sound when a Focus / Do Not Disturb mode is active.
+    plutil -extract data.0.modeIdentifier raw \
+        "$HOME/Library/DoNotDisturb/DB/Assertions.json" >/dev/null 2>&1 && return 0
+    file=""
+    case "$snd" in
+        default)
+            # Your configured macOS alert sound (System Settings → Sound → Alert).
+            beep=$(defaults read NSGlobalDomain com.apple.sound.beep.sound 2>/dev/null)
+            case "$beep" in
+                /*) file="$beep" ;;
+                ?*) for d in "$HOME/Library/Sounds" "/System/Library/Sounds" "/Library/Sounds"; do
+                        [ -f "$d/$beep.aiff" ] && { file="$d/$beep.aiff"; break; }
+                    done ;;
+            esac
+            ;;
+        /*) file="$snd" ;;
+        *)  file="/System/Library/Sounds/$snd.aiff" ;;
+    esac
+    [ -f "${file:-}" ] || file="/System/Library/Sounds/Ping.aiff"
+    # Synchronous: a backgrounded afplay would be reaped when the hook exits
+    # before it finishes playing. A short system sound is well within the timeout.
+    afplay "$file" >/dev/null 2>&1
 }
 
 notify_osc9() { printf '\033]9;%s\007' "$message"; }
@@ -280,13 +305,14 @@ notify_bell() { printf '\a'; }
 
 case "${CLAUDE_PULSE_NOTIFY:-auto}" in
     off) ;;
-    terminal-notifier|notifier) notify_terminal_notifier || notify_osa || notify_osc9 ;;
-    alerter) notify_alerter || notify_osa || notify_osc9 ;;
+    terminal-notifier|notifier) play_sound; notify_terminal_notifier || notify_osa || notify_osc9 ;;
+    alerter) play_sound; notify_alerter || notify_osa || notify_osc9 ;;
     notify-send) notify_send || notify_osc9 ;;
-    osa) notify_osa || notify_osc9 ;;
+    osa) play_sound; notify_osa || notify_osc9 ;;
     osc9) notify_osc9 ;;
     bell) notify_bell ;;
     *)
+        play_sound
         notify_terminal_notifier || notify_alerter || notify_send \
             || notify_osa || notify_osc9 || notify_bell
         ;;
