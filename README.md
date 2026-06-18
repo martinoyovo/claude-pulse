@@ -110,6 +110,28 @@ CLAUDE_PULSE_NERD=1        # use Nerd Font icons
 CLAUDE_PULSE_BAR_WIDTH=12  # a slightly longer bar
 ```
 
+### Icons (optional)
+
+By default the status line is **clean text — no icons** — so it renders on any
+terminal with zero setup. If you want little glyphs in front of each segment,
+there are three opt-in modes:
+
+- **Nerd Font** (`CLAUDE_PULSE_NERD=1`) — crisp monochrome icons. **Requires a
+  Nerd Font** installed *and* selected as your terminal font, or you'll see
+  hollow boxes (`􏿿`). To set it up on macOS:
+  ```sh
+  brew install --cask font-jetbrains-mono-nerd-font
+  ```
+  Then point your terminal at it — **Terminal.app:** Settings → Profiles → Text →
+  Font → *JetBrainsMono Nerd Font*; **iTerm2:** Settings → Profiles → Text → Font.
+  ([More Nerd Fonts →](https://www.nerdfonts.com/font-downloads))
+- **Emoji** (`CLAUDE_PULSE_EMOJI=1`) — 🤖 📁 🌿 …; renders on any terminal, no font.
+- **Symbols** (`CLAUDE_PULSE_SYMBOLS=1`) — plain Unicode (`✦ ▸ ⎇ ▦ ⚙ ◷`); no font,
+  no emoji, works in most terminals.
+
+Set one in `config.sh`, then open a new session. If glyphs show as boxes, your
+terminal font isn't a Nerd Font — install one as above, or use a different mode.
+
 ### Status line (`statusline.sh`)
 
 | Variable | Default | Effect |
