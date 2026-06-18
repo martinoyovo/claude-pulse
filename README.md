@@ -99,7 +99,7 @@ profile so Claude Code's spawned commands inherit them.
 | Variable | Default | Effect |
 | --- | --- | --- |
 | `CLAUDE_PULSE_NERD` | `0` | Set to `1` to use [Nerd Font](https://www.nerdfonts.com/) glyphs. Off uses plain, universally-renderable text. |
-| `CLAUDE_PULSE_CONTEXT_LIMIT` | auto | Override the context-window size in tokens. Auto-detects 1M for `…1m…` model ids, else 200k. |
+| `CLAUDE_PULSE_CONTEXT_LIMIT` | auto | Override the context-window size in tokens. Auto-detects 1M for `…1m…` model ids, else 200k — and steps 200k → 1M automatically if usage exceeds 200k (so a 1M session never gets stuck pegged at 100%). |
 | `CLAUDE_PULSE_HIDE` | _(none)_ | Comma list of segments to hide: `model`, `dir`, `branch`, `context`, `cost`. |
 | `NO_COLOR` | _(unset)_ | Standard [`NO_COLOR`](https://no-color.org/) — disables all ANSI color. |
 

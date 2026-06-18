@@ -148,6 +148,14 @@ if ! is_hidden context; then
   fi
   [ -n "$used" ] && [ "$used" -ge 0 ] 2>/dev/null || used=0
 
+  # Safety net: a model id doesn't always reveal a 1M-context window, which
+  # would peg the bar at 100% (stuck) once usage passes 200k. Observed usage is
+  # ground truth — if it exceeds the assumed limit, the real window must be
+  # larger, so step up to 1M (unless a limit was set explicitly).
+  if [ -z "${CLAUDE_PULSE_CONTEXT_LIMIT:-}" ] && [ "$used" -gt "$limit" ] && [ "$limit" -lt 1000000 ]; then
+    limit=1000000
+  fi
+
   if [ "$used" -gt 0 ] 2>/dev/null; then
     pct=$(( used * 100 / limit ))
     [ "$pct" -gt 100 ] && pct=100
