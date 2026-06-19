@@ -4,7 +4,7 @@
 
 set -u
 
-CLAUDE_PULSE_VERSION="0.6.5"
+CLAUDE_PULSE_VERSION="0.7.0"
 CLAUDE_DIR=${CLAUDE_CONFIG_DIR:-"$HOME/.claude"}
 INSTALL_DIR="$CLAUDE_DIR/claude-pulse"
 RAW_URL=${PULSE_RAW_URL:-"https://raw.githubusercontent.com/martinoyovo/claude-pulse/main"}
@@ -19,6 +19,8 @@ Usage: claude-pulse <command>
   install, reinstall  Alias for update (fetch + (re)install latest).
   uninstall           Remove claude-pulse entirely.
   test [stop|notify]  Fire a test desktop notification (default: stop).
+  icons [MODE]        Set status-line icons: nerd | emoji | symbols | off.
+                      No MODE shows the current setting.
   version             Print the installed version.
   help                Show this help.
 EOF
@@ -59,6 +61,33 @@ case "$cmd" in
             printf 'notify.sh not found at %s — is claude-pulse installed?\n' "$INSTALL_DIR" >&2
             exit 1
         fi
+        ;;
+    icons|--icons)
+        cfg="$INSTALL_DIR/config.sh"
+        [ -f "$cfg" ] || { printf 'config.sh not found — run claude-pulse update first.\n' >&2; exit 1; }
+        mode=${2:-}
+        if [ -z "$mode" ]; then
+            cur=$(grep -oE '^CLAUDE_PULSE_(NERD|EMOJI|SYMBOLS)=1' "$cfg" 2>/dev/null | head -1)
+            case "$cur" in
+                CLAUDE_PULSE_NERD=1)    printf 'Icons: nerd\n' ;;
+                CLAUDE_PULSE_EMOJI=1)   printf 'Icons: emoji\n' ;;
+                CLAUDE_PULSE_SYMBOLS=1) printf 'Icons: symbols\n' ;;
+                *)                      printf 'Icons: off (plain text)\n' ;;
+            esac
+            printf 'Usage: claude-pulse icons [nerd|emoji|symbols|off]\n'
+            exit 0
+        fi
+        # Remove any existing icon-mode lines (set or commented), then set one.
+        grep -vE '^[[:space:]]*#?[[:space:]]*CLAUDE_PULSE_(NERD|EMOJI|SYMBOLS)=' "$cfg" > "$cfg.tmp" 2>/dev/null \
+            && mv "$cfg.tmp" "$cfg"
+        case "$mode" in
+            nerd)    printf 'CLAUDE_PULSE_NERD=1\n'    >> "$cfg"; printf 'Icons set to nerd (needs a Nerd Font selected in your terminal).\n' ;;
+            emoji)   printf 'CLAUDE_PULSE_EMOJI=1\n'   >> "$cfg"; printf 'Icons set to emoji.\n' ;;
+            symbols) printf 'CLAUDE_PULSE_SYMBOLS=1\n' >> "$cfg"; printf 'Icons set to symbols.\n' ;;
+            off|plain|none) printf 'Icons set to off (plain text).\n' ;;
+            *) printf 'Unknown mode: %s (use nerd|emoji|symbols|off)\n' "$mode" >&2; exit 2 ;;
+        esac
+        printf 'Open a new Claude Code session to see the change.\n'
         ;;
     version|--version|-v)
         printf 'claude-pulse %s\n' "$CLAUDE_PULSE_VERSION"

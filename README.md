@@ -69,9 +69,10 @@ appear. The first time a hook runs, Claude Code may ask you to trust it.
 The installer also adds a `claude-pulse` command (symlinked onto your `PATH`):
 
 ```sh
-claude-pulse update      # re-install the latest version from GitHub
-claude-pulse test        # fire a test notification (or: claude-pulse test notify)
-claude-pulse uninstall   # remove claude-pulse
+claude-pulse update         # re-install the latest version from GitHub
+claude-pulse test           # fire a test notification (or: claude-pulse test notify)
+claude-pulse icons nerd     # set icons: nerd | emoji | symbols | off (no arg = show current)
+claude-pulse uninstall      # remove claude-pulse
 claude-pulse version
 ```
 
