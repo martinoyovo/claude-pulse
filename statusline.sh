@@ -44,7 +44,7 @@ else
   C_CTX_LOW=$'\033[32m'    # green
   C_CTX_MID=$'\033[93m'    # bright yellow
   C_CTX_HIGH=$'\033[91m'   # bright red
-  C_BAR_EMPTY=$'\033[90m'  # gray
+  C_BAR_EMPTY=""           # default fg — adapts to light/dark (90 washed out on light)
 fi
 
 # ─── Glyphs (Nerd Font opt-in, plain by default) ─────────────────────────────
@@ -234,7 +234,8 @@ if ! is_hidden context; then
     }
     counts=""
     if [ "${CLAUDE_PULSE_TOKENS:-1}" != "0" ]; then
-      counts=" ${D}($(human "$used")/$(human "$limit"))${R}"
+      # Default fg (no dim) — dim washed out on light themes.
+      counts=" ($(human "$used")/$(human "$limit"))"
     fi
     SEG_CTX="${ctx_color}${G_CTX}${R}${bar} ${ctx_color}${pct}%${R}${counts}"
   fi
