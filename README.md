@@ -1,5 +1,7 @@
 # claude-pulse
 
+![claude-pulse — a status line and smart notifications for Claude Code in the terminal](assets/cover.png)
+
 A tiny [Claude Code](https://claude.com/claude-code) companion that bundles two
 things in one repo:
 

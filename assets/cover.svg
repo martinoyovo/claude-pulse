@@ -1,0 +1,70 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>claude-pulse — status line + smart notifications for Claude Code in the terminal</title>
+<desc>Aurora purple-to-orange background framing a dark terminal showing the claude-pulse status line, a notification popping over it, a curl install command bar, and the repo link.</desc>
+<defs>
+<linearGradient id="base" x1="0" y1="0" x2="1280" y2="720" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#5b3a8c"/>
+<stop offset="0.32" stop-color="#9b4a9e"/>
+<stop offset="0.58" stop-color="#d15a86"/>
+<stop offset="0.8" stop-color="#e8845c"/>
+<stop offset="1" stop-color="#f4b878"/>
+</linearGradient>
+<radialGradient id="blobP" cx="0.12" cy="0.1" r="0.55">
+<stop offset="0" stop-color="#8a5cc0" stop-opacity="0.75"/>
+<stop offset="1" stop-color="#8a5cc0" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="blobB" cx="0.04" cy="0.9" r="0.55">
+<stop offset="0" stop-color="#5566d8" stop-opacity="0.6"/>
+<stop offset="1" stop-color="#5566d8" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="blobO" cx="0.97" cy="0.24" r="0.6">
+<stop offset="0" stop-color="#f4a85a" stop-opacity="0.65"/>
+<stop offset="1" stop-color="#f4a85a" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#0a0a12" stop-opacity="0.5"/>
+<stop offset="1" stop-color="#0a0a12" stop-opacity="0"/>
+</linearGradient>
+</defs>
+<rect width="1280" height="720" fill="url(#base)"/>
+<rect width="1280" height="720" fill="url(#blobP)"/>
+<rect width="1280" height="720" fill="url(#blobB)"/>
+<rect width="1280" height="720" fill="url(#blobO)"/>
+<rect width="1280" height="260" fill="url(#scrim)"/>
+<text x="110" y="66" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="600" letter-spacing="1" fill="#ffffff" opacity="0.85">open source  ·  for Claude Code in the terminal</text>
+<text x="106" y="132" font-family="system-ui,-apple-system,sans-serif" font-size="64" font-weight="800" fill="#ffffff">Claude Code,</text>
+<text x="106" y="204" font-family="system-ui,-apple-system,sans-serif" font-size="64" font-weight="800" fill="#ffffff">now with a <tspan fill="#ff9d72">pulse.</tspan></text>
+<rect x="130" y="258" width="1020" height="284" rx="18" fill="#0a0b10" opacity="0.28"/>
+<rect x="130" y="250" width="1020" height="284" rx="18" fill="#15171e" stroke="#2c303b" stroke-width="1.5"/>
+<circle cx="164" cy="278" r="7" fill="#ec6a5e"/>
+<circle cx="188" cy="278" r="7" fill="#f4be4f"/>
+<circle cx="212" cy="278" r="7" fill="#61c554"/>
+<text x="244" y="284" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="17" fill="#6b7280">claude — ~/my-project</text>
+<line x1="130" y1="302" x2="1150" y2="302" stroke="#2c303b" stroke-width="1"/>
+<text x="166" y="350" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="18" fill="#8b929e">› build the feature and run the tests, then stop</text>
+<text x="166" y="382" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="18" fill="#5b616d">● done in 2m 14s</text>
+<line x1="150" y1="494" x2="1130" y2="494" stroke="#23262f" stroke-width="1"/>
+<text x="166" y="520" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="20" font-weight="500"><tspan fill="#b89cf2">◆ AUTO</tspan><tspan fill="#5a5f6b"> │ </tspan><tspan fill="#d3a0f0">Opus 4.8</tspan><tspan fill="#5a5f6b"> │ </tspan><tspan fill="#6bd3e6">my-project</tspan><tspan fill="#5a5f6b"> │ </tspan><tspan fill="#84adff">main</tspan><tspan fill="#5a5f6b"> │ </tspan><tspan fill="#79c97f">████▌░░░ 42%</tspan><tspan fill="#8b929e"> (420K/1.0M)</tspan><tspan fill="#5a5f6b"> │ </tspan><tspan fill="#79c97f">$0.42</tspan></text>
+<rect x="742" y="196" width="466" height="94" rx="16" fill="#242832" stroke="#3a3f4c" stroke-width="1.5"/>
+<rect x="764" y="212" width="62" height="62" rx="14" fill="#d97757"/>
+<g transform="translate(795,243)" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(0)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(30)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(60)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(90)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(120)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(150)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(180)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(210)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(240)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(270)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(300)"/>
+<line x1="0" y1="-4" x2="0" y2="-17" transform="rotate(330)"/>
+</g>
+<text x="850" y="237" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="700" fill="#f2f1ee">my</text>
+<text x="850" y="265" font-family="system-ui,-apple-system,sans-serif" font-size="18" fill="#9aa0aa">Claude Code is waiting for your input</text>
+<rect x="130" y="556" width="1020" height="52" rx="12" fill="#15171e" stroke="#2c303b" stroke-width="1.5"/>
+<text x="152" y="589" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="17"><tspan fill="#ff9d72">$ </tspan><tspan fill="#dde0e6">curl -fsSL https://raw.githubusercontent.com/martinoyovo/claude-pulse/main/install.sh </tspan><tspan fill="#79c97f">| sh</tspan></text>
+<rect x="130" y="636" width="524" height="48" rx="24" fill="#15171e" opacity="0.92"/>
+<text x="158" y="667" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="23" fill="#eef0f4">github.com/martinoyovo/claude-pulse</text>
+</svg>
