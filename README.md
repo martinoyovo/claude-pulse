@@ -1,6 +1,8 @@
 # claude-pulse
 
-![claude-pulse — a status line and smart notifications for Claude Code in the terminal](assets/cover.png)
+[![claude-pulse — a status line and smart notifications for Claude Code in the terminal](assets/cover.png)](https://youtu.be/_Cu9TR3OGKg)
+
+**▶ [Watch the demo](https://youtu.be/_Cu9TR3OGKg)**
 
 A tiny [Claude Code](https://claude.com/claude-code) companion that bundles two
 things in one repo:
