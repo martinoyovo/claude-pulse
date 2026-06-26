@@ -102,6 +102,51 @@ cp statusline.sh hooks/notify.sh ~/.claude/claude-pulse/
 chmod +x ~/.claude/claude-pulse/*.sh
 ```
 
+### Windows (PowerShell)
+
+The `.sh` scripts need a POSIX shell, and the notifier intentionally no-ops on
+Windows. For a **native Windows experience** there's a PowerShell port with full
+parity — same status line, same segments, same config knobs, plus real Windows
+desktop notifications:
+
+```powershell
+git clone https://github.com/martinoyovo/claude-pulse.git
+cd claude-pulse
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+The Windows installer mirrors the shell one exactly: it copies the scripts to
+`%USERPROFILE%\.claude\claude-pulse\` and **merges** the `statusLine` and `hooks`
+blocks into your `settings.json` without clobbering anything (idempotent, backs
+up a pre-existing status line). Because Claude Code runs the configured command
+string directly, the scripts are wired as
+`powershell -NoProfile -ExecutionPolicy Bypass -File "<path>"`.
+
+Manage it with `claude-pulse.ps1`:
+
+```powershell
+powershell -File "$env:USERPROFILE\.claude\claude-pulse\claude-pulse.ps1" test       # fire a test notification
+powershell -File "$env:USERPROFILE\.claude\claude-pulse\claude-pulse.ps1" icons emoji # nerd | emoji | symbols | off
+powershell -File "$env:USERPROFILE\.claude\claude-pulse\claude-pulse.ps1" update      # reinstall latest
+powershell -File "$env:USERPROFILE\.claude\claude-pulse\claude-pulse.ps1" uninstall
+```
+
+Notes specific to the Windows port:
+
+- **No `jq` needed** — it uses the built-in `ConvertFrom-Json`. Only `git` is
+  optional (for the branch segment), same as the shell version.
+- **Works on Windows PowerShell 5.1+ and PowerShell 7+.** The `.ps1` files ship
+  UTF-8 with a BOM so 5.1 renders the bar glyphs correctly.
+- **Notifications** use the best backend available, in order:
+  [BurntToast](https://github.com/Windos/BurntToast) (Action Center toast, if
+  the module is installed) → a `System.Windows.Forms` tray balloon → an audible
+  beep. Install BurntToast for the nicest result:
+  `Install-Module BurntToast -Scope CurrentUser`.
+- All `CLAUDE_PULSE_*` config knobs work the same; set them in
+  `%USERPROFILE%\.claude\claude-pulse\config.ps1` (dot-sourced; survives
+  updates). The macOS-only options (`*_SOUND`, `*_SKIP_FOCUSED`,
+  `*_FOCUS_ON_CLICK`, `*_SENDER`) don't apply.
+
 ## Configuration
 
 Set these as environment variables, or — easier — edit
@@ -259,7 +304,9 @@ Run `./uninstall.sh --help` for details.
   Terminal/iTerm (Automation permission). Allow it — that first click is consumed
   by the dialog; every click afterward jumps straight to the tab. This can't be
   pre-granted; it's macOS's by-design approval.
-- Hooks are not supported on Windows shells; the notifier exits quietly there.
+- On Windows shells the `.sh` notifier exits quietly — use the native
+  [PowerShell port](#windows-powershell) (`install.ps1`) for status line +
+  notifications there.
 - Everything degrades gracefully: missing fields, no transcript, no `jq`, or no
   `git` just drop the affected segment rather than erroring.
 - Status-line design modeled on
