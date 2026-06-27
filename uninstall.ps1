@@ -13,6 +13,11 @@ $InstallDir   = Join-Path $ClaudeDir 'claude-pulse'
 $SettingsFile = Join-Path $ClaudeDir 'settings.json'
 $PrevStatuslineFile = Join-Path $InstallDir 'statusline.prev.json'
 
+# Write settings.json as UTF-8 WITHOUT a BOM so strict JSON parsers don't choke.
+function Write-Utf8NoBom([string]$path, [string]$text) {
+    [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
+}
+
 if (Test-Path -LiteralPath $SettingsFile) {
     try {
         $data = Get-Content -LiteralPath $SettingsFile -Raw | ConvertFrom-Json
@@ -55,7 +60,7 @@ if (Test-Path -LiteralPath $SettingsFile) {
             }
         }
 
-        ($data | ConvertTo-Json -Depth 20) | Set-Content -LiteralPath $SettingsFile -Encoding UTF8
+        Write-Utf8NoBom $SettingsFile ($data | ConvertTo-Json -Depth 20)
     }
 }
 

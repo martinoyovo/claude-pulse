@@ -18,22 +18,41 @@ $ClaudeDir   = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Joi
 $InstallDir  = Join-Path $ClaudeDir 'claude-pulse'
 $SettingsFile = Join-Path $ClaudeDir 'settings.json'
 $PrevStatuslineFile = Join-Path $InstallDir 'statusline.prev.json'
+$RawUrl      = if ($env:PULSE_RAW_URL) { $env:PULSE_RAW_URL } else { 'https://raw.githubusercontent.com/martinoyovo/claude-pulse/main' }
+
+# Write text as UTF-8 WITHOUT a BOM. settings.json must be BOM-less so strict
+# JSON parsers don't choke (Windows PowerShell 5.1's `Set-Content -Encoding UTF8`
+# would prepend a BOM).
+function Write-Utf8NoBom([string]$path, [string]$text) {
+    [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
+}
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 New-Item -ItemType Directory -Force -Path $ClaudeDir  | Out-Null
 
-# --- Copy the scripts -----------------------------------------------------------
+# --- Install the scripts --------------------------------------------------------
+# Copy from $ScriptDir for a git-clone install; fall back to fetching from the raw
+# repo URL when a source is missing (e.g. `claude-pulse update`, which downloads
+# only install.ps1 into a temp dir and runs it). Mirrors install.sh's
+# install_file -> fetch_file behavior.
 $files = @(
-    @{ src = (Join-Path $ScriptDir 'statusline.ps1');        dst = (Join-Path $InstallDir 'statusline.ps1') },
-    @{ src = (Join-Path $ScriptDir 'hooks\notify.ps1');      dst = (Join-Path $InstallDir 'notify.ps1') },
-    @{ src = (Join-Path $ScriptDir 'uninstall.ps1');         dst = (Join-Path $InstallDir 'uninstall.ps1') },
-    @{ src = (Join-Path $ScriptDir 'claude-pulse.ps1');      dst = (Join-Path $InstallDir 'claude-pulse.ps1') }
+    @{ src = (Join-Path $ScriptDir 'statusline.ps1');   url = 'statusline.ps1';       dst = (Join-Path $InstallDir 'statusline.ps1') },
+    @{ src = (Join-Path $ScriptDir 'hooks\notify.ps1'); url = 'hooks/notify.ps1';     dst = (Join-Path $InstallDir 'notify.ps1') },
+    @{ src = (Join-Path $ScriptDir 'uninstall.ps1');    url = 'uninstall.ps1';        dst = (Join-Path $InstallDir 'uninstall.ps1') },
+    @{ src = (Join-Path $ScriptDir 'claude-pulse.ps1'); url = 'claude-pulse.ps1';     dst = (Join-Path $InstallDir 'claude-pulse.ps1') }
 )
 foreach ($f in $files) {
     if (Test-Path -LiteralPath $f.src) {
         Copy-Item -LiteralPath $f.src -Destination $f.dst -Force
+    } elseif ($RawUrl) {
+        try {
+            Invoke-WebRequest -UseBasicParsing -Uri "$RawUrl/$($f.url)" -OutFile $f.dst
+        } catch {
+            Write-Error "Could not download $RawUrl/$($f.url): $($_.Exception.Message)"
+            exit 1
+        }
     } else {
-        Write-Error "Local source not found: $($f.src)"
+        Write-Error "Local source not found and no PULSE_RAW_URL set: $($f.src)"
         exit 1
     }
 }
@@ -105,7 +124,7 @@ function Ensure-Prop($obj, [string]$name, $default) {
 $existingSl = $null
 if ($data.PSObject.Properties.Name -contains 'statusLine') { $existingSl = $data.statusLine }
 if ($existingSl -and $existingSl.command -and $existingSl.command -ne $statusCmd -and ($existingSl.command -notlike '*statusline.ps1*')) {
-    ($existingSl | ConvertTo-Json -Depth 10) | Set-Content -LiteralPath $PrevStatuslineFile -Encoding UTF8
+    Write-Utf8NoBom $PrevStatuslineFile ($existingSl | ConvertTo-Json -Depth 10)
 }
 $newSl = [PSCustomObject]@{ type = 'command'; command = $statusCmd; padding = 0 }
 if ($data.PSObject.Properties.Name -contains 'statusLine') { $data.statusLine = $newSl }
@@ -137,7 +156,7 @@ foreach ($evt in @('Stop','Notification')) {
     else { $hooks | Add-Member -NotePropertyName $evt -NotePropertyValue $entries }
 }
 
-($data | ConvertTo-Json -Depth 20) | Set-Content -LiteralPath $SettingsFile -Encoding UTF8
+Write-Utf8NoBom $SettingsFile ($data | ConvertTo-Json -Depth 20)
 
 # --- Summary --------------------------------------------------------------------
 $claudeVersion = 'not found on PATH'

@@ -172,20 +172,20 @@ if (-not (Is-Hidden 'branch') -and (Get-Command git -ErrorAction SilentlyContinu
 }
 
 # --- Segment: tool activity (most-used tool + count) -----------------------------
+# Stay cheap on long sessions: scan the in-memory lines with a regex instead of
+# running ConvertFrom-Json on every tool_use line (matches statusline.sh's single
+# streaming pass). tool_use blocks serialize as
+#   "type":"tool_use","id":"...","name":"<Name>"
 $SEG_TOOLS = ''
 if (-not (Is-Hidden 'tools') -and $TX_LINES) {
     $counts = @{}
+    $rx = [regex]'"type":"tool_use"(?:,"id":"[^"]*")?,"name":"([^"]+)"'
     foreach ($line in $TX_LINES) {
         if ($line -notlike '*"tool_use"*') { continue }
-        try {
-            $obj = $line | ConvertFrom-Json
-            if ($obj.type -ne 'assistant') { continue }
-            foreach ($c in $obj.message.content) {
-                if ($c.type -eq 'tool_use' -and $c.name) {
-                    if ($counts.ContainsKey($c.name)) { $counts[$c.name]++ } else { $counts[$c.name] = 1 }
-                }
-            }
-        } catch {}
+        foreach ($m in $rx.Matches($line)) {
+            $name = $m.Groups[1].Value
+            if ($counts.ContainsKey($name)) { $counts[$name]++ } else { $counts[$name] = 1 }
+        }
     }
     if ($counts.Count -gt 0) {
         $top = $counts.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 1
@@ -290,7 +290,7 @@ if (-not (Is-Hidden 'duration')) {
 # --- Segment: session cost -------------------------------------------------------
 $SEG_COST = ''
 if (-not (Is-Hidden 'cost')) {
-    $costFmt = ('{0:0.00}' -f [double]$COST)
+    $costFmt = ([double]$COST).ToString('0.00', [System.Globalization.CultureInfo]::InvariantCulture)
     $SEG_COST = "$C_COST$G_COST`$$costFmt$R"
 }
 
