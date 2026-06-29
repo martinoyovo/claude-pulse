@@ -1,5 +1,9 @@
 # claude-pulse
 
+![Platform: macOS | Linux | Windows](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
+![Shell: bash | sh | PowerShell](https://img.shields.io/badge/shell-bash%20%7C%20sh%20%7C%20PowerShell-89e051)
+[![License: MIT](https://img.shields.io/github/license/martinoyovo/claude-pulse)](LICENSE)
+
 [![claude-pulse — a status line and smart notifications for Claude Code in the terminal](assets/cover.png)](https://youtu.be/_Cu9TR3OGKg)
 
 **▶ [Watch the demo](https://youtu.be/_Cu9TR3OGKg)**
