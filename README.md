@@ -16,9 +16,9 @@ Dependency-light: portable `bash`/`sh` + `jq` (and `git` for the branch
 segment). No frameworks.
 
 **Runs on macOS, Linux, and Windows.** The `bash`/`sh` scripts cover macOS and
-Linux; a native [PowerShell port](#windows-powershell) (a community
-contribution) brings full parity to Windows — same status line, same segments,
-same config knobs, plus real Windows desktop notifications.
+Linux; a native [PowerShell port](#windows-powershell) brings full parity to
+Windows — same status line, same segments, same config knobs, plus real Windows
+desktop notifications.
 
 ## Preview
 
