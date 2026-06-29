@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
-$CLAUDE_PULSE_VERSION = '0.7.1'
+$CLAUDE_PULSE_VERSION = '0.8.0'
 $ClaudeDir  = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
 $InstallDir = Join-Path $ClaudeDir 'claude-pulse'
 $RawUrl     = if ($env:PULSE_RAW_URL) { $env:PULSE_RAW_URL } else { 'https://raw.githubusercontent.com/martinoyovo/claude-pulse/main' }
