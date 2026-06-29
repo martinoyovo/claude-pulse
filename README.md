@@ -1,6 +1,6 @@
 # claude-pulse
 
-[![Latest release](https://img.shields.io/github/v/release/martinoyovo/claude-pulse)](https://github.com/martinoyovo/claude-pulse/releases)
+![Version: v0.8.0](https://img.shields.io/badge/version-v0.8.0-blue)
 ![Platform: macOS | Linux | Windows](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
 ![Shell: bash | sh | PowerShell](https://img.shields.io/badge/shell-bash%20%7C%20sh%20%7C%20PowerShell-89e051)
 [![License: MIT](https://img.shields.io/github/license/martinoyovo/claude-pulse)](LICENSE)
