@@ -1,5 +1,10 @@
 # claude-pulse
 
+[![Latest release](https://img.shields.io/github/v/release/martinoyovo/claude-pulse)](https://github.com/martinoyovo/claude-pulse/releases)
+![Platform: macOS | Linux | Windows](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
+![Shell: bash | sh | PowerShell](https://img.shields.io/badge/shell-bash%20%7C%20sh%20%7C%20PowerShell-89e051)
+[![License: MIT](https://img.shields.io/github/license/martinoyovo/claude-pulse)](LICENSE)
+
 [![claude-pulse — a status line and smart notifications for Claude Code in the terminal](assets/cover.png)](https://youtu.be/_Cu9TR3OGKg)
 
 **▶ [Watch the demo](https://youtu.be/_Cu9TR3OGKg)**
@@ -14,6 +19,11 @@ things in one repo:
 It's the Claude Code counterpart to [`codex-pulse`](https://github.com/martinoyovo/codex-pulse).
 Dependency-light: portable `bash`/`sh` + `jq` (and `git` for the branch
 segment). No frameworks.
+
+**Runs on macOS, Linux, and Windows.** The `bash`/`sh` scripts cover macOS and
+Linux; a native [PowerShell port](#windows-powershell) brings full parity to
+Windows — same status line, same segments, same config knobs, plus real Windows
+desktop notifications.
 
 ## Preview
 
