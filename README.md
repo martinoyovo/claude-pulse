@@ -15,6 +15,11 @@ It's the Claude Code counterpart to [`codex-pulse`](https://github.com/martinoyo
 Dependency-light: portable `bash`/`sh` + `jq` (and `git` for the branch
 segment). No frameworks.
 
+**Runs on macOS, Linux, and Windows.** The `bash`/`sh` scripts cover macOS and
+Linux; a native [PowerShell port](#windows-powershell) (a community
+contribution) brings full parity to Windows — same status line, same segments,
+same config knobs, plus real Windows desktop notifications.
+
 ## Preview
 
 The status line is a single, color-coded line:
